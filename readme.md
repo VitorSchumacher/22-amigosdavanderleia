@@ -1,3 +1,5 @@
+# LINK youtube: https://youtu.be/I8f29gCC0fU
+
 # AgroFinance — Controle Financeiro para Produtores Rurais
 
 Plataforma de gestão financeira voltada para produtores rurais de pequeno e médio porte, combinando uma interface web com interação via WhatsApp e inteligência artificial.
@@ -38,6 +40,7 @@ O produtor rural interage pelo WhatsApp para consultar e registrar seus gastos f
 ```
 
 **Stack do Frontend:**
+
 - React 18 + Vite 5
 - React Router v6 (SPA com rotas protegidas)
 - Styled Components v6
@@ -45,15 +48,17 @@ O produtor rural interage pelo WhatsApp para consultar e registrar seus gastos f
 - Lucide React (ícones)
 
 **Variável de ambiente principal:**
-| Variável | Descrição |
-|----------|-----------|
-| `VITE_API_URL` | URL base da API backend (ex: `http://localhost:3000`) |
+
+| Variável        | Descrição                                            |
+| ---------------- | ------------------------------------------------------ |
+| `VITE_API_URL` | URL base da API backend (ex:`http://localhost:3000`) |
 
 ---
 
 ## Como Rodar Localmente
 
 ### Pré-requisitos
+
 - Node.js 18+
 - npm ou yarn
 
@@ -94,19 +99,19 @@ npm test           # roda os testes com Vitest + jsdom
 
 ## Rotas da Aplicação
 
-| Rota | Descrição |
-|------|-----------|
-| `/` | Landing page pública |
-| `/login` | Login com número de telefone |
-| `/cadastro` | Cadastro de novo produtor |
-| `/whatsapp-otp` | Verificação OTP via WhatsApp |
-| `/dashboard` | Visão geral financeira, gráficos e cotações |
-| `/gastos` | Lançamentos de receitas e despesas |
-| `/relatorios` | Relatórios por safra e categoria |
-| `/notas-fiscais` | Emissão e consulta de NF-e / NFS-e |
-| `/sefaz` | NF-e recebidas e status de integração SEFAZ |
-| `/estoque` | Controle de estoque da propriedade |
-| `/configuracoes` | Dados da fazenda e preferências |
+| Rota               | Descrição                                     |
+| ------------------ | ----------------------------------------------- |
+| `/`              | Landing page pública                           |
+| `/login`         | Login com número de telefone                   |
+| `/cadastro`      | Cadastro de novo produtor                       |
+| `/whatsapp-otp`  | Verificação OTP via WhatsApp                  |
+| `/dashboard`     | Visão geral financeira, gráficos e cotações |
+| `/gastos`        | Lançamentos de receitas e despesas             |
+| `/relatorios`    | Relatórios por safra e categoria               |
+| `/notas-fiscais` | Emissão e consulta de NF-e / NFS-e             |
+| `/sefaz`         | NF-e recebidas e status de integração SEFAZ   |
+| `/estoque`       | Controle de estoque da propriedade              |
+| `/configuracoes` | Dados da fazenda e preferências                |
 
 ---
 
@@ -114,19 +119,19 @@ npm test           # roda os testes com Vitest + jsdom
 
 ### Implementadas (Frontend)
 
-- [x] Landing page com apresentação do produto
-- [x] Autenticação por número de telefone + OTP WhatsApp
-- [x] Rotas protegidas com contexto de autenticação (JWT)
-- [x] Sidebar responsiva com navegação completa
-- [x] **Dashboard** — cards de resumo financeiro, gráfico de evolução mensal (área), gastos por categoria (pizza), últimos lançamentos e cotações de commodities
-- [x] **Gastos** — listagem de receitas e despesas com filtros
-- [x] **Relatórios** — visão por safra e categoria
-- [x] **Notas Fiscais** — listagem de NF-e e NFS-e com status
-- [x] **SEFAZ** — painel de NF-e recebidas e indicador de conexão
-- [x] **Estoque** — cadastro e movimentação de insumos
-- [x] **Configurações** — dados da fazenda e preferências
-- [x] Tema global com design tokens (cores, tipografia, espaçamento)
-- [x] Animações de entrada com `IntersectionObserver` (`useInView`)
+- [X] Landing page com apresentação do produto
+- [X] Autenticação por número de telefone + OTP WhatsApp
+- [X] Rotas protegidas com contexto de autenticação (JWT)
+- [X] Sidebar responsiva com navegação completa
+- [X] **Dashboard** — cards de resumo financeiro, gráfico de evolução mensal (área), gastos por categoria (pizza), últimos lançamentos e cotações de commodities
+- [X] **Gastos** — listagem de receitas e despesas com filtros
+- [X] **Relatórios** — visão por safra e categoria
+- [X] **Notas Fiscais** — listagem de NF-e e NFS-e com status
+- [X] **SEFAZ** — painel de NF-e recebidas e indicador de conexão
+- [X] **Estoque** — cadastro e movimentação de insumos
+- [X] **Configurações** — dados da fazenda e preferências
+- [X] Tema global com design tokens (cores, tipografia, espaçamento)
+- [X] Animações de entrada com `IntersectionObserver` (`useInView`)
 
 ### Planejadas / Em Desenvolvimento
 
@@ -146,15 +151,19 @@ npm test           # roda os testes com Vitest + jsdom
 > As telas abaixo refletem o estado atual do frontend com dados mockados.
 
 ### Landing Page
+
 ![Landing Page](docs/screenshots/landing.png)
 
 ### Dashboard
+
 ![Dashboard](docs/screenshots/dashboard.png)
 
 ### Controle de Gastos
+
 ![Gastos](docs/screenshots/gastos.png)
 
 ### Controle de Estoque
+
 ![Estoque](docs/screenshots/estoque.png)
 
 > Para gerar os prints: rode `npm run dev`, navegue pelas rotas e salve os screenshots em `docs/screenshots/`.

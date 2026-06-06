@@ -1,20 +1,66 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import styled from 'styled-components'
-import { Plus, Search, Filter, X } from 'lucide-react'
-import { gastos as gastosIniciais, categorias } from '../data/mockData'
+import { Plus, Search, Filter, X, Trash2 } from 'lucide-react'
+import { financeiro } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
+
+const CATEGORIAS = [
+  { slug: 'insumos',      nome: 'Insumos' },
+  { slug: 'maquinario',   nome: 'Maquinário' },
+  { slug: 'mao_de_obra',  nome: 'Mão de Obra' },
+  { slug: 'combustivel',  nome: 'Combustível' },
+  { slug: 'arrendamento', nome: 'Arrendamento' },
+  { slug: 'receitas',     nome: 'Receitas' },
+  { slug: 'outros',       nome: 'Outros' },
+]
+
+const SLUG_TO_NOME = Object.fromEntries(CATEGORIAS.map(c => [c.slug, c.nome]))
+const NOME_TO_SLUG = Object.fromEntries(CATEGORIAS.map(c => [c.nome, c.slug]))
+
+function normalizar(l) {
+  return {
+    _id: l._id,
+    descricao: l.description,
+    categoria: SLUG_TO_NOME[l.category] ?? l.category,
+    valor: l.value,
+    data: l.date,
+    tipo: l.type === 'receita' ? 'entrada' : 'saida',
+    origem: l.origin,
+  }
+}
 
 const fmt = (v) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export default function Gastos() {
-  const [lista, setLista] = useState(gastosIniciais)
+  const { user } = useAuth()
+  const [lista, setLista] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(null)
   const [busca, setBusca] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('Todas')
   const [filtroTipo, setFiltroTipo] = useState('todos')
   const [modalAberto, setModalAberto] = useState(false)
+  const [salvando, setSalvando] = useState(false)
   const [novoGasto, setNovoGasto] = useState({
-    descricao: '', categoria: 'Insumos', valor: '', data: '', tipo: 'saida',
+    descricao: '', categoria: 'insumos', valor: '', data: '', tipo: 'saida',
   })
+
+  const carregarLancamentos = useCallback(async () => {
+    if (!user?.slug) return
+    try {
+      setCarregando(true)
+      setErro(null)
+      const res = await financeiro.listar(user.slug)
+      setLista((res.data ?? []).map(normalizar))
+    } catch (e) {
+      setErro(e.message)
+    } finally {
+      setCarregando(false)
+    }
+  }, [user?.slug])
+
+  useEffect(() => { carregarLancamentos() }, [carregarLancamentos])
 
   const listaFiltrada = lista.filter((g) => {
     const matchBusca = g.descricao.toLowerCase().includes(busca.toLowerCase())
@@ -23,17 +69,37 @@ export default function Gastos() {
     return matchBusca && matchCategoria && matchTipo
   })
 
-  function handleAdicionarGasto(e) {
+  async function handleAdicionarGasto(e) {
     e.preventDefault()
-    const novo = {
-      id: lista.length + 1,
-      ...novoGasto,
-      valor: parseFloat(novoGasto.valor),
-      origem: 'web',
+    setSalvando(true)
+    try {
+      const payload = {
+        type: novoGasto.tipo === 'entrada' ? 'receita' : 'despesa',
+        description: novoGasto.descricao,
+        value: parseFloat(novoGasto.valor),
+        date: novoGasto.data,
+        category: NOME_TO_SLUG[novoGasto.categoria] ?? novoGasto.categoria,
+        origin: 'web',
+      }
+      const res = await financeiro.criar(user.slug, payload)
+      setLista(prev => [normalizar(res.data), ...prev])
+      setModalAberto(false)
+      setNovoGasto({ descricao: '', categoria: 'insumos', valor: '', data: '', tipo: 'saida' })
+    } catch (e) {
+      alert(e.message ?? 'Erro ao salvar lançamento')
+    } finally {
+      setSalvando(false)
     }
-    setLista([novo, ...lista])
-    setModalAberto(false)
-    setNovoGasto({ descricao: '', categoria: 'Insumos', valor: '', data: '', tipo: 'saida' })
+  }
+
+  async function handleRemover(id) {
+    if (!confirm('Remover este lançamento?')) return
+    try {
+      await financeiro.remover(user.slug, id)
+      setLista(prev => prev.filter(g => g._id !== id))
+    } catch (e) {
+      alert(e.message ?? 'Erro ao remover lançamento')
+    }
   }
 
   return (
@@ -63,7 +129,7 @@ export default function Gastos() {
           <Filter size={15} color="#6C757D" />
           <Select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)}>
             <option>Todas</option>
-            {categorias.map(c => <option key={c.id}>{c.nome}</option>)}
+            {CATEGORIAS.map(c => <option key={c.slug}>{c.nome}</option>)}
           </Select>
         </FilterGroup>
 
@@ -76,6 +142,8 @@ export default function Gastos() {
         </TipoTabs>
       </Filters>
 
+      {erro && <ErroMsg>{erro}</ErroMsg>}
+
       <Table>
         <thead>
           <tr>
@@ -84,11 +152,24 @@ export default function Gastos() {
             <Th>Data</Th>
             <Th>Origem</Th>
             <Th align="right">Valor</Th>
+            <Th />
           </tr>
         </thead>
         <tbody>
-          {listaFiltrada.map(g => (
-            <Tr key={g.id}>
+          {carregando ? (
+            <tr>
+              <Td colSpan={6} style={{ textAlign: 'center', color: '#ADB5BD', padding: '32px' }}>
+                Carregando...
+              </Td>
+            </tr>
+          ) : listaFiltrada.length === 0 ? (
+            <tr>
+              <Td colSpan={6} style={{ textAlign: 'center', color: '#ADB5BD', padding: '32px' }}>
+                Nenhum lançamento encontrado
+              </Td>
+            </tr>
+          ) : listaFiltrada.map(g => (
+            <Tr key={g._id}>
               <Td>{g.descricao}</Td>
               <Td>
                 <CatBadge>{g.categoria}</CatBadge>
@@ -104,15 +185,13 @@ export default function Gastos() {
                   {g.tipo === 'entrada' ? '+' : '-'} {fmt(g.valor)}
                 </Valor>
               </Td>
+              <Td>
+                <DeleteBtn onClick={() => handleRemover(g._id)} title="Remover">
+                  <Trash2 size={15} />
+                </DeleteBtn>
+              </Td>
             </Tr>
           ))}
-          {listaFiltrada.length === 0 && (
-            <tr>
-              <Td colSpan={5} style={{ textAlign: 'center', color: '#ADB5BD', padding: '32px' }}>
-                Nenhum lançamento encontrado
-              </Td>
-            </tr>
-          )}
         </tbody>
       </Table>
 
@@ -155,7 +234,7 @@ export default function Gastos() {
                   <ModalInput
                     type="number"
                     step="0.01"
-                    min="0"
+                    min="0.01"
                     placeholder="0,00"
                     value={novoGasto.valor}
                     onChange={e => setNovoGasto({ ...novoGasto, valor: e.target.value })}
@@ -179,13 +258,15 @@ export default function Gastos() {
                   value={novoGasto.categoria}
                   onChange={e => setNovoGasto({ ...novoGasto, categoria: e.target.value })}
                 >
-                  {categorias.map(c => <option key={c.id}>{c.nome}</option>)}
+                  {CATEGORIAS.map(c => <option key={c.slug} value={c.slug}>{c.nome}</option>)}
                 </ModalSelect>
               </ModalField>
 
               <ModalActions>
                 <CancelBtn type="button" onClick={() => setModalAberto(false)}>Cancelar</CancelBtn>
-                <SaveBtn type="submit">Salvar lançamento</SaveBtn>
+                <SaveBtn type="submit" disabled={salvando}>
+                  {salvando ? 'Salvando...' : 'Salvar lançamento'}
+                </SaveBtn>
               </ModalActions>
             </ModalForm>
           </ModalCard>
@@ -501,5 +582,21 @@ const SaveBtn = styled.button`
   font-weight: 600;
   transition: background 0.2s;
 
-  &:hover { background: #1B4332; }
+  &:hover:not(:disabled) { background: #1B4332; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+`
+
+const ErroMsg = styled.p`
+  color: #E63946;
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+`
+
+const DeleteBtn = styled.button`
+  color: #ADB5BD;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+
+  &:hover { color: #E63946; }
 `

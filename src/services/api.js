@@ -48,3 +48,12 @@ export const api = {
 export const whatsapp = {
   verifyOtp: (code) => api.post('/whatsapp/verify-otp', { code }),
 }
+
+export const financeiro = {
+  listar: (slug, params) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+    return api.get(`/users/${slug}/financeiro/lancamentos${qs}`)
+  },
+  criar: (slug, body) => api.post(`/users/${slug}/financeiro/lancamentos`, body),
+  remover: (slug, id) => api.delete(`/users/${slug}/financeiro/lancamentos/${id}`),
+}
