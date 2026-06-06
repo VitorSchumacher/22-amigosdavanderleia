@@ -44,3 +44,7 @@ export const api = {
   delete: (path) =>
     request(path, { method: 'DELETE' }),
 }
+
+export const whatsapp = {
+  verifyOtp: (code) => api.post('/whatsapp/verify-otp', { code }),
+}

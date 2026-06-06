@@ -115,7 +115,7 @@ const Logo = styled.div`
 `
 
 const LogoImg = styled.img`
-  height: 80px;
+  height: 140px;
   width: auto;
 `
 

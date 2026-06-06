@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import styled from 'styled-components'
 import logoImg from '../assets/logo.png'
+import { whatsapp } from '../services/api'
 
 export default function WhatsappOTP() {
   const navigate = useNavigate()
@@ -62,12 +63,17 @@ export default function WhatsappOTP() {
     setLoading(true)
     setError('')
     try {
-      // TODO: integrar com API real
-      await new Promise(r => setTimeout(r, 1200))
+      await whatsapp.verifyOtp(code)
       setVerified(true)
-      setTimeout(() => navigate('/configuracoes'), 2000)
-    } catch {
-      setError('Código inválido ou expirado. Tente novamente.')
+      setTimeout(() => navigate('/dashboard'), 2000)
+    } catch (err) {
+      if (err.status === 422 || err.status === 400) {
+        setError('Código inválido. Verifique e tente novamente.')
+      } else if (err.status === 410) {
+        setError('Código expirado. Solicite um novo código.')
+      } else {
+        setError(err.message ?? 'Erro ao verificar. Tente novamente.')
+      }
     } finally {
       setLoading(false)
     }
