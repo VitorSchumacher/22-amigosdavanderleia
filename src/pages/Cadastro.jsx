@@ -62,7 +62,7 @@ export default function Cadastro() {
         cpf: form.cpf,
         birthDate: form.birthDate,
       })
-      navigate('/dashboard')
+      navigate('/whatsapp/send-otp', { state: { phone: form.phone } })
     } catch (err) {
       if (err.status === 422 && err.errors) {
         setErrors(err.errors)

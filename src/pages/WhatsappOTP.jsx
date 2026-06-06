@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import styled, { keyframes } from 'styled-components'
+import { useNavigate, useLocation } from 'react-router-dom'
+import styled from 'styled-components'
 import logoImg from '../assets/logo.png'
 
 export default function WhatsappOTP() {
   const navigate = useNavigate()
+  const { state } = useLocation()
+  const phone = state?.phone ?? ''
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -114,7 +116,8 @@ export default function WhatsappOTP() {
 
         <Heading>Confirme seu número</Heading>
         <Subheading>
-          Enviamos um código de 6 dígitos via WhatsApp.<br />
+          Enviamos um código de 6 dígitos via WhatsApp
+          {phone ? <> para <strong>{phone}</strong></> : ''}.{' '}
           Digite abaixo para vincular sua conta.
         </Subheading>
 
