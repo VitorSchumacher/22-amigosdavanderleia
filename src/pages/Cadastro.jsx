@@ -54,11 +54,12 @@ export default function Cadastro() {
     setGlobalError('')
     setLoading(true)
     try {
+      const rawPhone = '55' + form.phone.replace(/\D/g, '')
       await register({
         name: form.name,
         email: form.email,
         password: form.password,
-        phone: form.phone,
+        phone: rawPhone,
         cpf: form.cpf,
         birthDate: form.birthDate,
       })
