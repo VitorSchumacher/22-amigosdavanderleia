@@ -3,6 +3,7 @@ import { ThemeProvider } from 'styled-components'
 import { theme } from './styles/theme'
 import { GlobalStyles } from './styles/GlobalStyles'
 import AppLayout from './components/AppLayout'
+import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Cadastro from './pages/Cadastro'
 import Dashboard from './pages/Dashboard'
@@ -16,6 +17,7 @@ export default function App() {
       <GlobalStyles />
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route element={<AppLayout />}>
@@ -24,7 +26,7 @@ export default function App() {
             <Route path="/relatorios" element={<Relatorios />} />
             <Route path="/configuracoes" element={<Configuracoes />} />
           </Route>
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
