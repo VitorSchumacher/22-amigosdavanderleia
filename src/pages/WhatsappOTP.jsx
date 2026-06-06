@@ -79,13 +79,18 @@ export default function WhatsappOTP() {
     }
   }
 
-  function handleResend() {
+  async function handleResend() {
     if (resendCooldown > 0) return
+    try {
+      await whatsapp.resendOtp()
+    } catch (err) {
+      setError(err.message ?? 'Erro ao reenviar código. Tente novamente.')
+      return
+    }
     setDigits(['', '', '', '', '', ''])
     setError('')
     setResendCooldown(30)
     inputs.current[0]?.focus()
-    // TODO: chamar API de reenvio
   }
 
   if (verified) {

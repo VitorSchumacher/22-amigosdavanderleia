@@ -1,36 +1,125 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import {
   Package, AlertTriangle, TrendingDown, TrendingUp,
   Plus, Search, ArrowUpCircle, ArrowDownCircle, History,
 } from 'lucide-react'
-import { estoqueItens, movimentacoesEstoque } from '../data/mockData'
+import { estoque } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 
-const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-const fmtDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')
+const fmtDate = (d) => new Date(d).toLocaleDateString('pt-BR')
+
+const CATEGORIAS = ['defensivos', 'fertilizantes', 'sementes', 'combustivel', 'outros']
 
 export default function Estoque() {
+  const { user } = useAuth()
+  const [itens, setItens] = useState([])
+  const [movimentacoes, setMovimentacoes] = useState([])
+  const [resumo, setResumo] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState('')
   const [aba, setAba] = useState('itens')
-  const [showModal, setShowModal] = useState(false)
+
+  const [showMovModal, setShowMovModal] = useState(false)
   const [tipoMovimento, setTipoMovimento] = useState('entrada')
+  const [movForm, setMovForm] = useState({ itemId: '', quantidade: '', motivo: '' })
+  const [movSubmitting, setMovSubmitting] = useState(false)
+  const [movError, setMovError] = useState('')
 
-  const itensEmAlerta = estoqueItens.filter(i => i.quantidade <= i.minimo)
-  const valorTotal = estoqueItens.reduce((acc, i) => acc + i.quantidade * i.precoUnitario, 0)
+  const [showNovoModal, setShowNovoModal] = useState(false)
+  const [novoForm, setNovoForm] = useState({
+    nome: '', categoria: 'defensivos', quantidade: '',
+    unidade: '', estoqueMinimo: '', descricao: '',
+  })
+  const [novoSubmitting, setNovoSubmitting] = useState(false)
+  const [novoError, setNovoError] = useState('')
 
-  const itensFiltrados = estoqueItens.filter((i) =>
+  useEffect(() => {
+    if (!user?.slug) return
+    loadAll()
+  }, [user?.slug])
+
+  async function loadAll() {
+    setLoading(true)
+    try {
+      const [itensRes, movRes, resumoRes] = await Promise.all([
+        estoque.listar(user.slug),
+        estoque.movimentacoes(user.slug),
+        estoque.resumo(user.slug),
+      ])
+      setItens(itensRes?.data ?? itensRes ?? [])
+      setMovimentacoes(movRes?.data ?? movRes ?? [])
+      setResumo(resumoRes?.data ?? resumoRes ?? null)
+    } catch {
+      // keep empty state on error
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const itensEmAlerta = itens.filter(i => i.emAlerta)
+
+  const itensFiltrados = itens.filter((i) =>
     i.nome.toLowerCase().includes(busca.toLowerCase()) ||
     i.categoria.toLowerCase().includes(busca.toLowerCase())
   )
 
-  const movFiltradas = movimentacoesEstoque.filter((m) =>
-    m.item.toLowerCase().includes(busca.toLowerCase())
+  const movFiltradas = movimentacoes.filter((m) =>
+    (m.itemId?.nome ?? '').toLowerCase().includes(busca.toLowerCase())
   )
 
   function statusEstoque(item) {
-    if (item.quantidade <= item.minimo) return { label: 'Estoque Baixo', color: '#E63946', bg: '#FFF0EE' }
-    if (item.quantidade <= item.minimo * 1.5) return { label: 'Atenção', color: '#F4A261', bg: '#FFF8EE' }
+    if (item.emAlerta) return { label: 'Estoque Baixo', color: '#E63946', bg: '#FFF0EE' }
+    if (item.quantidade <= item.estoqueMinimo * 1.5) return { label: 'Atenção', color: '#F4A261', bg: '#FFF8EE' }
     return { label: 'Normal', color: '#40916C', bg: '#E9F5EE' }
+  }
+
+  async function handleMovimentar(e) {
+    e.preventDefault()
+    setMovError('')
+    if (!movForm.itemId || !movForm.quantidade || !movForm.motivo) {
+      setMovError('Preencha todos os campos.')
+      return
+    }
+    setMovSubmitting(true)
+    try {
+      await estoque.movimentar(user.slug, movForm.itemId, {
+        tipo: tipoMovimento,
+        quantidade: Number(movForm.quantidade),
+        motivo: movForm.motivo,
+      })
+      setShowMovModal(false)
+      setMovForm({ itemId: '', quantidade: '', motivo: '' })
+      await loadAll()
+    } catch (err) {
+      setMovError(err.message ?? 'Erro ao registrar movimentação.')
+    } finally {
+      setMovSubmitting(false)
+    }
+  }
+
+  async function handleNovoItem(e) {
+    e.preventDefault()
+    setNovoError('')
+    if (!novoForm.nome || !novoForm.quantidade || !novoForm.unidade) {
+      setNovoError('Preencha nome, quantidade e unidade.')
+      return
+    }
+    setNovoSubmitting(true)
+    try {
+      await estoque.criar(user.slug, {
+        ...novoForm,
+        quantidade: Number(novoForm.quantidade),
+        estoqueMinimo: Number(novoForm.estoqueMinimo) || 0,
+      })
+      setShowNovoModal(false)
+      setNovoForm({ nome: '', categoria: 'defensivos', quantidade: '', unidade: '', estoqueMinimo: '', descricao: '' })
+      await loadAll()
+    } catch (err) {
+      setNovoError(err.message ?? 'Erro ao criar item.')
+    } finally {
+      setNovoSubmitting(false)
+    }
   }
 
   return (
@@ -41,10 +130,13 @@ export default function Estoque() {
           <PageSub>Insumos, combustíveis e materiais da propriedade</PageSub>
         </div>
         <HeaderActions>
-          <MovBtn entrada onClick={() => { setTipoMovimento('entrada'); setShowModal(true) }}>
+          <NovoBtn onClick={() => setShowNovoModal(true)}>
+            <Plus size={16} /> Novo Item
+          </NovoBtn>
+          <MovBtn entrada onClick={() => { setTipoMovimento('entrada'); setShowMovModal(true) }}>
             <ArrowUpCircle size={16} /> Entrada
           </MovBtn>
-          <MovBtn onClick={() => { setTipoMovimento('saida'); setShowModal(true) }}>
+          <MovBtn onClick={() => { setTipoMovimento('saida'); setShowMovModal(true) }}>
             <ArrowDownCircle size={16} /> Saída
           </MovBtn>
         </HeaderActions>
@@ -65,28 +157,28 @@ export default function Estoque() {
           <SCardIcon bg="#EEF2FF"><Package size={20} color="#4C6EF5" /></SCardIcon>
           <SCardInfo>
             <SCardLabel>Total de Itens</SCardLabel>
-            <SCardVal>{estoqueItens.length}</SCardVal>
+            <SCardVal>{resumo?.totalItens ?? itens.length}</SCardVal>
           </SCardInfo>
         </SCard>
         <SCard accent="#E63946">
           <SCardIcon bg="#FFF0EE"><AlertTriangle size={20} color="#E63946" /></SCardIcon>
           <SCardInfo>
             <SCardLabel>Estoque Baixo</SCardLabel>
-            <SCardVal>{itensEmAlerta.length}</SCardVal>
+            <SCardVal>{resumo?.emAlerta ?? itensEmAlerta.length}</SCardVal>
           </SCardInfo>
         </SCard>
         <SCard accent="#40916C">
           <SCardIcon bg="#E9F5EE"><TrendingUp size={20} color="#40916C" /></SCardIcon>
           <SCardInfo>
-            <SCardLabel>Entradas este mês</SCardLabel>
-            <SCardVal>{movimentacoesEstoque.filter(m => m.tipo === 'entrada').length}</SCardVal>
+            <SCardLabel>Entradas registradas</SCardLabel>
+            <SCardVal>{movimentacoes.filter(m => m.tipo === 'entrada').length}</SCardVal>
           </SCardInfo>
         </SCard>
         <SCard accent="#2D6A4F">
-          <SCardIcon bg="#E9F5EE"><Package size={20} color="#2D6A4F" /></SCardIcon>
+          <SCardIcon bg="#E9F5EE"><TrendingDown size={20} color="#2D6A4F" /></SCardIcon>
           <SCardInfo>
-            <SCardLabel>Valor em Estoque</SCardLabel>
-            <SCardVal style={{ fontSize: '1.1rem' }}>{fmt(valorTotal)}</SCardVal>
+            <SCardLabel>Saídas registradas</SCardLabel>
+            <SCardVal>{movimentacoes.filter(m => m.tipo === 'saida').length}</SCardVal>
           </SCardInfo>
         </SCard>
       </CardsGrid>
@@ -111,7 +203,9 @@ export default function Estoque() {
           </Abas>
         </Toolbar>
 
-        {aba === 'itens' ? (
+        {loading ? (
+          <EmptyState>Carregando...</EmptyState>
+        ) : aba === 'itens' ? (
           <Table>
             <thead>
               <tr>
@@ -119,38 +213,33 @@ export default function Estoque() {
                 <Th>Categoria</Th>
                 <Th>Quantidade</Th>
                 <Th>Mínimo</Th>
-                <Th>Localização</Th>
-                <Th>Última Entrada</Th>
-                <Th>Valor Unitário</Th>
-                <Th>Valor Total</Th>
                 <Th>Status</Th>
               </tr>
             </thead>
             <tbody>
-              {itensFiltrados.map((item) => {
+              {itensFiltrados.length === 0 ? (
+                <tr>
+                  <Td colSpan={5} style={{ textAlign: 'center', color: '#ADB5BD' }}>
+                    Nenhum item encontrado
+                  </Td>
+                </tr>
+              ) : itensFiltrados.map((item) => {
                 const st = statusEstoque(item)
                 return (
-                  <tr key={item.id}>
+                  <tr key={item._id}>
                     <Td>
                       <NomeItem>{item.nome}</NomeItem>
+                      {item.descricao && <DescItem>{item.descricao}</DescItem>}
                     </Td>
                     <Td><CategoriaBadge>{item.categoria}</CategoriaBadge></Td>
                     <Td>
-                      <QuantWrap baixo={item.quantidade <= item.minimo}>
+                      <QuantWrap baixo={item.emAlerta}>
                         <strong>{item.quantidade.toLocaleString('pt-BR')}</strong>
                         <span>{item.unidade}</span>
                       </QuantWrap>
                     </Td>
                     <Td style={{ fontSize: '0.85rem', color: '#6C757D' }}>
-                      {item.minimo} {item.unidade}
-                    </Td>
-                    <Td style={{ fontSize: '0.85rem', color: '#495057' }}>{item.localizacao}</Td>
-                    <Td style={{ fontSize: '0.85rem', color: '#6C757D' }}>{fmtDate(item.ultimaEntrada)}</Td>
-                    <Td style={{ fontSize: '0.85rem', color: '#495057' }}>
-                      {fmt(item.precoUnitario)}/{item.unidade}
-                    </Td>
-                    <Td>
-                      <ValorTotal>{fmt(item.quantidade * item.precoUnitario)}</ValorTotal>
+                      {item.estoqueMinimo} {item.unidade}
                     </Td>
                     <Td>
                       <StatusBadge color={st.color} bg={st.bg}>
@@ -172,13 +261,21 @@ export default function Estoque() {
                 <Th>Quantidade</Th>
                 <Th>Data</Th>
                 <Th>Motivo</Th>
-                <Th>NF-e Vinculada</Th>
               </tr>
             </thead>
             <tbody>
-              {movFiltradas.map((m) => (
-                <tr key={m.id}>
-                  <Td><NomeItem>{m.item}</NomeItem></Td>
+              {movFiltradas.length === 0 ? (
+                <tr>
+                  <Td colSpan={5} style={{ textAlign: 'center', color: '#ADB5BD' }}>
+                    Nenhuma movimentação encontrada
+                  </Td>
+                </tr>
+              ) : movFiltradas.map((m) => (
+                <tr key={m._id}>
+                  <Td>
+                    <NomeItem>{m.itemId?.nome ?? '—'}</NomeItem>
+                    {m.itemId?.categoria && <DescItem>{m.itemId.categoria}</DescItem>}
+                  </Td>
                   <Td>
                     {m.tipo === 'entrada' ? (
                       <TipoBadge entrada>
@@ -193,17 +290,11 @@ export default function Estoque() {
                   <Td>
                     <QuantWrap>
                       <strong>{m.quantidade.toLocaleString('pt-BR')}</strong>
+                      <span>{m.itemId?.unidade}</span>
                     </QuantWrap>
                   </Td>
                   <Td style={{ fontSize: '0.85rem', color: '#6C757D' }}>{fmtDate(m.data)}</Td>
                   <Td style={{ fontSize: '0.85rem', color: '#495057' }}>{m.motivo}</Td>
-                  <Td>
-                    {m.nfe ? (
-                      <NfeBadge>{m.nfe}</NfeBadge>
-                    ) : (
-                      <span style={{ color: '#ADB5BD', fontSize: '0.8rem' }}>—</span>
-                    )}
-                  </Td>
                 </tr>
               ))}
             </tbody>
@@ -211,9 +302,8 @@ export default function Estoque() {
         )}
       </TableCard>
 
-      {/* Modal movimentação */}
-      {showModal && (
-        <Overlay onClick={() => setShowModal(false)}>
+      {showMovModal && (
+        <Overlay onClick={() => setShowMovModal(false)}>
           <Modal onClick={(e) => e.stopPropagation()}>
             <ModalHeader entrada={tipoMovimento === 'entrada'}>
               <h3>
@@ -223,43 +313,133 @@ export default function Estoque() {
                   <><ArrowDownCircle size={20} /> Registrar Saída</>
                 )}
               </h3>
-              <CloseBtn onClick={() => setShowModal(false)}>✕</CloseBtn>
+              <CloseBtn onClick={() => setShowMovModal(false)}>✕</CloseBtn>
             </ModalHeader>
             <ModalBody>
-              <FormGrid>
-                <FormGroup full>
-                  <label>Item</label>
-                  <select>
-                    {estoqueItens.map(i => (
-                      <option key={i.id}>{i.nome} ({i.unidade})</option>
-                    ))}
-                  </select>
-                </FormGroup>
-                <FormGroup>
-                  <label>Quantidade</label>
-                  <input type="number" placeholder="0" />
-                </FormGroup>
-                <FormGroup>
-                  <label>Data</label>
-                  <input type="date" defaultValue="2026-06-05" />
-                </FormGroup>
-                <FormGroup full>
-                  <label>Motivo / Observação</label>
-                  <input type="text" placeholder={tipoMovimento === 'entrada' ? 'Ex: Compra, transferência…' : 'Ex: Aplicação talhão 1…'} />
-                </FormGroup>
-                {tipoMovimento === 'entrada' && (
+              <form onSubmit={handleMovimentar}>
+                <FormGrid>
                   <FormGroup full>
-                    <label>NF-e Vinculada (opcional)</label>
-                    <input type="text" placeholder="Ex: NF-e 001.245" />
+                    <label>Item</label>
+                    <select
+                      value={movForm.itemId}
+                      onChange={(e) => setMovForm(f => ({ ...f, itemId: e.target.value }))}
+                    >
+                      <option value="">Selecione um item...</option>
+                      {itens.map(i => (
+                        <option key={i._id} value={i._id}>{i.nome} ({i.unidade})</option>
+                      ))}
+                    </select>
                   </FormGroup>
-                )}
-              </FormGrid>
-              <ModalActions>
-                <CancelBtn onClick={() => setShowModal(false)}>Cancelar</CancelBtn>
-                <SubmitBtn entrada={tipoMovimento === 'entrada'} onClick={() => { alert(`Movimentação registrada (demo)`); setShowModal(false) }}>
-                  {tipoMovimento === 'entrada' ? 'Confirmar Entrada' : 'Confirmar Saída'}
-                </SubmitBtn>
-              </ModalActions>
+                  <FormGroup>
+                    <label>Quantidade</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="0"
+                      value={movForm.quantidade}
+                      onChange={(e) => setMovForm(f => ({ ...f, quantidade: e.target.value }))}
+                    />
+                  </FormGroup>
+                  <FormGroup full>
+                    <label>Motivo / Observação</label>
+                    <input
+                      type="text"
+                      placeholder={tipoMovimento === 'entrada' ? 'Ex: Compra, transferência…' : 'Ex: Aplicação talhão 1…'}
+                      value={movForm.motivo}
+                      onChange={(e) => setMovForm(f => ({ ...f, motivo: e.target.value }))}
+                    />
+                  </FormGroup>
+                </FormGrid>
+                {movError && <ErrorMsg>{movError}</ErrorMsg>}
+                <ModalActions>
+                  <CancelBtn type="button" onClick={() => setShowMovModal(false)}>Cancelar</CancelBtn>
+                  <SubmitBtn type="submit" entrada={tipoMovimento === 'entrada'} disabled={movSubmitting}>
+                    {movSubmitting ? 'Salvando…' : tipoMovimento === 'entrada' ? 'Confirmar Entrada' : 'Confirmar Saída'}
+                  </SubmitBtn>
+                </ModalActions>
+              </form>
+            </ModalBody>
+          </Modal>
+        </Overlay>
+      )}
+
+      {showNovoModal && (
+        <Overlay onClick={() => setShowNovoModal(false)}>
+          <Modal onClick={(e) => e.stopPropagation()}>
+            <ModalHeader entrada>
+              <h3><Plus size={20} /> Novo Item</h3>
+              <CloseBtn onClick={() => setShowNovoModal(false)}>✕</CloseBtn>
+            </ModalHeader>
+            <ModalBody>
+              <form onSubmit={handleNovoItem}>
+                <FormGrid>
+                  <FormGroup full>
+                    <label>Nome</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Roundup 4L"
+                      value={novoForm.nome}
+                      onChange={(e) => setNovoForm(f => ({ ...f, nome: e.target.value }))}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <label>Categoria</label>
+                    <select
+                      value={novoForm.categoria}
+                      onChange={(e) => setNovoForm(f => ({ ...f, categoria: e.target.value }))}
+                    >
+                      {CATEGORIAS.map(c => (
+                        <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                      ))}
+                    </select>
+                  </FormGroup>
+                  <FormGroup>
+                    <label>Unidade</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: L, sc, kg, t"
+                      value={novoForm.unidade}
+                      onChange={(e) => setNovoForm(f => ({ ...f, unidade: e.target.value }))}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <label>Quantidade inicial</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={novoForm.quantidade}
+                      onChange={(e) => setNovoForm(f => ({ ...f, quantidade: e.target.value }))}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <label>Estoque mínimo</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={novoForm.estoqueMinimo}
+                      onChange={(e) => setNovoForm(f => ({ ...f, estoqueMinimo: e.target.value }))}
+                    />
+                  </FormGroup>
+                  <FormGroup full>
+                    <label>Descrição (opcional)</label>
+                    <input
+                      type="text"
+                      placeholder="Observações sobre o item"
+                      value={novoForm.descricao}
+                      onChange={(e) => setNovoForm(f => ({ ...f, descricao: e.target.value }))}
+                    />
+                  </FormGroup>
+                </FormGrid>
+                {novoError && <ErrorMsg>{novoError}</ErrorMsg>}
+                <ModalActions>
+                  <CancelBtn type="button" onClick={() => setShowNovoModal(false)}>Cancelar</CancelBtn>
+                  <SubmitBtn type="submit" entrada disabled={novoSubmitting}>
+                    {novoSubmitting ? 'Salvando…' : 'Cadastrar Item'}
+                  </SubmitBtn>
+                </ModalActions>
+              </form>
             </ModalBody>
           </Modal>
         </Overlay>
@@ -276,7 +456,13 @@ const PageHeader = styled.div`
 `
 const PageTitle = styled.h1`font-size: 1.5rem; font-weight: 800; color: #1A1A2E;`
 const PageSub = styled.p`font-size: 0.875rem; color: #6C757D; margin-top: 2px;`
-const HeaderActions = styled.div`display: flex; gap: 10px;`
+const HeaderActions = styled.div`display: flex; gap: 10px; flex-wrap: wrap;`
+const NovoBtn = styled.button`
+  display: inline-flex; align-items: center; gap: 7px;
+  font-weight: 600; font-size: 0.875rem; padding: 9px 18px; border-radius: 9px; cursor: pointer;
+  transition: all 0.2s; background: #EEF2FF; color: #4C6EF5; border: none;
+  &:hover { background: #E0E7FF; }
+`
 const MovBtn = styled.button`
   display: inline-flex; align-items: center; gap: 7px;
   font-weight: 600; font-size: 0.875rem; padding: 9px 18px; border-radius: 9px; cursor: pointer;
@@ -336,13 +522,17 @@ const AbaBtn = styled.button`
   background: ${({ active }) => active ? '#1B4332' : '#F1F3F5'};
   color: ${({ active }) => active ? '#fff' : '#495057'};
 `
+const EmptyState = styled.div`
+  padding: 48px; text-align: center; color: #ADB5BD; font-size: 0.9rem;
+`
 const Table = styled.table`width: 100%; border-collapse: collapse;`
 const Th = styled.th`
   text-align: left; padding: 12px 16px; font-size: 0.75rem;
   font-weight: 600; color: #6C757D; background: #F8F9FA; border-bottom: 1px solid #F1F3F5;
 `
 const Td = styled.td`padding: 14px 16px; border-bottom: 1px solid #F9FAFB; vertical-align: middle;`
-const NomeItem = styled.span`font-weight: 600; font-size: 0.875rem; color: #1A1A2E;`
+const NomeItem = styled.span`font-weight: 600; font-size: 0.875rem; color: #1A1A2E; display: block;`
+const DescItem = styled.span`font-size: 0.78rem; color: #ADB5BD;`
 const CategoriaBadge = styled.span`
   background: #F1F3F5; color: #495057; font-size: 0.75rem;
   font-weight: 600; padding: 4px 10px; border-radius: 6px;
@@ -352,7 +542,6 @@ const QuantWrap = styled.div`
   strong { font-size: 0.9375rem; font-weight: 700; color: ${({ baixo }) => baixo ? '#E63946' : '#1A1A2E'}; }
   span { font-size: 0.72rem; color: #6C757D; }
 `
-const ValorTotal = styled.span`font-weight: 700; color: #2D6A4F; font-size: 0.9rem;`
 const StatusBadge = styled.span`
   display: inline-flex; align-items: center; gap: 5px;
   background: ${({ bg }) => bg}; color: ${({ color }) => color};
@@ -364,9 +553,8 @@ const TipoBadge = styled.span`
   background: ${({ entrada }) => entrada ? '#E9F5EE' : '#FFF0EE'};
   color: ${({ entrada }) => entrada ? '#2D6A4F' : '#E63946'};
 `
-const NfeBadge = styled.span`
-  font-size: 0.75rem; font-weight: 600; color: #4C6EF5;
-  background: #EEF2FF; padding: 3px 8px; border-radius: 6px; font-family: monospace;
+const ErrorMsg = styled.p`
+  font-size: 0.8125rem; color: #E63946; margin-top: 12px;
 `
 
 /* Modal */
@@ -405,7 +593,8 @@ const CancelBtn = styled.button`
 `
 const SubmitBtn = styled.button`
   padding: 10px 22px; border-radius: 8px; font-size: 0.875rem; font-weight: 600;
-  color: #fff; cursor: pointer;
+  color: #fff; cursor: pointer; disabled: opacity 0.6;
   background: ${({ entrada }) => entrada ? 'linear-gradient(135deg,#2D6A4F,#40916C)' : 'linear-gradient(135deg,#E63946,#FF6B6B)'};
   &:hover { opacity: 0.9; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
 `

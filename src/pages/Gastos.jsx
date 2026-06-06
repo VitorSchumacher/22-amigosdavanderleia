@@ -63,7 +63,7 @@ export default function Gastos() {
   useEffect(() => { carregarLancamentos() }, [carregarLancamentos])
 
   const listaFiltrada = lista.filter((g) => {
-    const matchBusca = g.descricao.toLowerCase().includes(busca.toLowerCase())
+    const matchBusca = (g.descricao ?? '').toLowerCase().includes(busca.toLowerCase())
     const matchCategoria = filtroCategoria === 'Todas' || g.categoria === filtroCategoria
     const matchTipo = filtroTipo === 'todos' || g.tipo === filtroTipo
     return matchBusca && matchCategoria && matchTipo
@@ -78,7 +78,7 @@ export default function Gastos() {
         description: novoGasto.descricao,
         value: parseFloat(novoGasto.valor),
         date: novoGasto.data,
-        category: NOME_TO_SLUG[novoGasto.categoria] ?? novoGasto.categoria,
+        category: novoGasto.categoria,
         origin: 'web',
       }
       const res = await financeiro.criar(user.slug, payload)

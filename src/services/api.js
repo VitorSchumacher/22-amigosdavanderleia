@@ -19,16 +19,21 @@ async function request(path, options = {}) {
 
   if (res.status === 204) return null
 
-  const data = await res.json()
-
   if (!res.ok) {
-    const error = new Error(data.message ?? 'Erro inesperado')
+    let message = 'Erro inesperado'
+    let errors = null
+    try {
+      const data = await res.json()
+      message = data.message ?? message
+      errors = data.errors ?? null
+    } catch {}
+    const error = new Error(message)
     error.status = res.status
-    error.errors = data.errors ?? null
+    error.errors = errors
     throw error
   }
 
-  return data
+  return res.json()
 }
 
 export const api = {
@@ -47,6 +52,7 @@ export const api = {
 
 export const whatsapp = {
   verifyOtp: (code) => api.post('/whatsapp/verify-otp', { code }),
+  resendOtp: () => api.post('/whatsapp/resend-otp', {}),
 }
 
 export const financeiro = {
@@ -56,4 +62,22 @@ export const financeiro = {
   },
   criar: (slug, body) => api.post(`/users/${slug}/financeiro/lancamentos`, body),
   remover: (slug, id) => api.delete(`/users/${slug}/financeiro/lancamentos/${id}`),
+}
+
+export const estoque = {
+  listar: (slug, params) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+    return api.get(`/users/${slug}/estoque${qs}`)
+  },
+  criar: (slug, body) => api.post(`/users/${slug}/estoque`, body),
+  resumo: (slug) => api.get(`/users/${slug}/estoque/resumo`),
+  alertas: (slug) => api.get(`/users/${slug}/estoque/alertas`),
+  movimentacoes: (slug, params) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+    return api.get(`/users/${slug}/estoque/movimentacoes${qs}`)
+  },
+  buscar: (slug, id) => api.get(`/users/${slug}/estoque/${id}`),
+  atualizar: (slug, id, body) => api.put(`/users/${slug}/estoque/${id}`, body),
+  remover: (slug, id) => api.delete(`/users/${slug}/estoque/${id}`),
+  movimentar: (slug, id, body) => api.post(`/users/${slug}/estoque/${id}/movimentar`, body),
 }

@@ -48,7 +48,7 @@ export default function Configuracoes() {
       await updateUser(user.slug, {
         name: form.name,
         email: form.email,
-        phone: form.phone,
+        phone: form.phone.replace(/\D/g, ''),
         birthDate: form.birthDate,
       })
       setSuccess(true)
