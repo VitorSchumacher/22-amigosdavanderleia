@@ -15,7 +15,6 @@ const CATEGORIAS = [
 ]
 
 const SLUG_TO_NOME = Object.fromEntries(CATEGORIAS.map(c => [c.slug, c.nome]))
-const NOME_TO_SLUG = Object.fromEntries(CATEGORIAS.map(c => [c.nome, c.slug]))
 
 function normalizar(l) {
   return {
@@ -82,7 +81,7 @@ export default function Gastos() {
         origin: 'web',
       }
       const res = await financeiro.criar(user.slug, payload)
-      setLista(prev => [normalizar(res.data), ...prev])
+      setLista(prev => [normalizar(res?.data ?? res), ...prev])
       setModalAberto(false)
       setNovoGasto({ descricao: '', categoria: 'insumos', valor: '', data: '', tipo: 'saida' })
     } catch (e) {
@@ -174,7 +173,7 @@ export default function Gastos() {
               <Td>
                 <CatBadge>{g.categoria}</CatBadge>
               </Td>
-              <Td>{new Date(g.data).toLocaleDateString('pt-BR')}</Td>
+              <Td>{g.data ? new Date(g.data).toLocaleDateString('pt-BR') : '—'}</Td>
               <Td>
                 <OrigemBadge whatsapp={g.origem === 'whatsapp'}>
                   {g.origem === 'whatsapp' ? 'WhatsApp' : 'Web'}
@@ -182,7 +181,7 @@ export default function Gastos() {
               </Td>
               <Td align="right">
                 <Valor entrada={g.tipo === 'entrada'}>
-                  {g.tipo === 'entrada' ? '+' : '-'} {fmt(g.valor)}
+                  {g.tipo === 'entrada' ? '+' : '-'} {g.valor != null ? fmt(g.valor) : '—'}
                 </Valor>
               </Td>
               <Td>

@@ -60,8 +60,8 @@ export default function Estoque() {
   const itensEmAlerta = itens.filter(i => i.emAlerta)
 
   const itensFiltrados = itens.filter((i) =>
-    i.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    i.categoria.toLowerCase().includes(busca.toLowerCase())
+    (i.nome ?? '').toLowerCase().includes(busca.toLowerCase()) ||
+    (i.categoria ?? '').toLowerCase().includes(busca.toLowerCase())
   )
 
   const movFiltradas = movimentacoes.filter((m) =>

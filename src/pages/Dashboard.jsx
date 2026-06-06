@@ -16,9 +16,8 @@ import {
 const fmt = (v) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-
 export default function Dashboard() {
+  const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
   const ultimosGastos = gastos.slice(0, 5)
 
   return (
