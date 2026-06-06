@@ -1,0 +1,56 @@
+export const theme = {
+  colors: {
+    primary: '#2D6A4F',
+    primaryLight: '#40916C',
+    primaryDark: '#1B4332',
+    secondary: '#74C69D',
+    accent: '#F4A261',
+    danger: '#E63946',
+    warning: '#F4A261',
+    success: '#40916C',
+    background: '#F8F9FA',
+    surface: '#FFFFFF',
+    surfaceAlt: '#F1F3F0',
+    border: '#DEE2E6',
+    text: {
+      primary: '#1A1A2E',
+      secondary: '#6C757D',
+      muted: '#ADB5BD',
+      inverse: '#FFFFFF',
+    },
+  },
+  fonts: {
+    body: "'Inter', sans-serif",
+  },
+  fontSizes: {
+    xs: '0.75rem',
+    sm: '0.875rem',
+    md: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem',
+    '2xl': '1.5rem',
+    '3xl': '1.875rem',
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+    '2xl': '48px',
+  },
+  radii: {
+    sm: '6px',
+    md: '10px',
+    lg: '16px',
+    full: '9999px',
+  },
+  shadows: {
+    sm: '0 1px 3px rgba(0,0,0,0.08)',
+    md: '0 4px 12px rgba(0,0,0,0.1)',
+    lg: '0 8px 24px rgba(0,0,0,0.12)',
+  },
+  sidebar: {
+    width: '240px',
+  },
+}
