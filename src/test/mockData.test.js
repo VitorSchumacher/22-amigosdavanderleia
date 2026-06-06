@@ -1,145 +1,123 @@
-import { describe, it, expect } from 'vitest'
-import {
-  gastos,
-  estoqueItens,
-  notasFiscais,
-  nfeRecebidas,
-  resumoFinanceiro,
-  evolucaoMensal,
-  categorias,
-} from '../data/mockData'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { normalizar, SLUG_TO_NOME } from '../utils/lancamento'
+import { financeiro, notasFiscais, sefaz, commodities } from '../services/api'
 
-describe('gastos', () => {
-  it('cada gasto tem os campos obrigatórios', () => {
-    for (const g of gastos) {
-      expect(g).toHaveProperty('id')
-      expect(g).toHaveProperty('descricao')
-      expect(g).toHaveProperty('categoria')
-      expect(g).toHaveProperty('valor')
-      expect(g).toHaveProperty('data')
-      expect(g).toHaveProperty('tipo')
+// ── normalizar ────────────────────────────────────────────────────
+
+describe('normalizar', () => {
+  it('mapeia campos da API para o formato interno', () => {
+    const raw = {
+      _id: 'abc123',
+      description: 'Herbicida Glifosato',
+      category: 'insumos',
+      value: 4800,
+      date: '2026-05-28',
+      type: 'despesa',
+      origin: 'whatsapp',
     }
+    const result = normalizar(raw)
+    expect(result).toEqual({
+      _id: 'abc123',
+      descricao: 'Herbicida Glifosato',
+      categoria: 'Insumos',
+      valor: 4800,
+      data: '2026-05-28',
+      tipo: 'saida',
+      origem: 'whatsapp',
+    })
   })
 
-  it('tipo é sempre "entrada" ou "saida"', () => {
-    for (const g of gastos) {
-      expect(['entrada', 'saida']).toContain(g.tipo)
-    }
+  it('mapeia type "receita" para tipo "entrada"', () => {
+    const result = normalizar({ type: 'receita', category: 'receitas' })
+    expect(result.tipo).toBe('entrada')
   })
 
-  it('valores são positivos', () => {
-    for (const g of gastos) {
-      expect(g.valor).toBeGreaterThan(0)
-    }
+  it('categoria desconhecida mantém o slug original', () => {
+    const result = normalizar({ category: 'categoria_nova' })
+    expect(result.categoria).toBe('categoria_nova')
   })
+})
 
-  it('datas seguem formato YYYY-MM-DD', () => {
-    const iso = /^\d{4}-\d{2}-\d{2}$/
-    for (const g of gastos) {
-      expect(g.data).toMatch(iso)
+describe('SLUG_TO_NOME', () => {
+  it('cobre todas as categorias esperadas', () => {
+    const esperados = ['insumos', 'maquinario', 'mao_de_obra', 'combustivel', 'arrendamento', 'receitas', 'outros']
+    for (const slug of esperados) {
+      expect(SLUG_TO_NOME[slug]).toBeTruthy()
     }
   })
 })
 
-describe('estoqueItens', () => {
-  it('cada item tem os campos obrigatórios', () => {
-    for (const item of estoqueItens) {
-      expect(item).toHaveProperty('id')
-      expect(item).toHaveProperty('nome')
-      expect(item).toHaveProperty('quantidade')
-      expect(item).toHaveProperty('minimo')
-      expect(item).toHaveProperty('precoUnitario')
-    }
+// ── api — novos módulos ───────────────────────────────────────────
+
+function mockFetch(status, body) {
+  global.fetch = vi.fn().mockResolvedValue({
+    status,
+    ok: status >= 200 && status < 300,
+    json: () => Promise.resolve(body),
+  })
+}
+
+beforeEach(() => {
+  localStorage.clear()
+  vi.restoreAllMocks()
+})
+
+describe('financeiro — novos endpoints', () => {
+  it('resumo chama a rota correta', async () => {
+    mockFetch(200, { data: {} })
+    await financeiro.resumo('slug-1')
+    expect(fetch.mock.calls[0][0]).toContain('/users/slug-1/financeiro/resumo')
   })
 
-  it('identifica itens com estoque abaixo do mínimo', () => {
-    const criticos = estoqueItens.filter(i => i.quantidade < i.minimo)
-    expect(criticos.length).toBeGreaterThan(0)
-    const nomes = criticos.map(i => i.nome)
-    expect(nomes).toContain('Inseticida Engeo Pleno')
-    expect(nomes).toContain('Semente Soja RR2')
+  it('evolucao chama a rota correta', async () => {
+    mockFetch(200, { data: [] })
+    await financeiro.evolucao('slug-1')
+    expect(fetch.mock.calls[0][0]).toContain('/users/slug-1/financeiro/evolucao')
   })
 
-  it('quantidades e preços são não-negativos', () => {
-    for (const item of estoqueItens) {
-      expect(item.quantidade).toBeGreaterThanOrEqual(0)
-      expect(item.precoUnitario).toBeGreaterThan(0)
-    }
+  it('categorias chama a rota correta', async () => {
+    mockFetch(200, { data: [] })
+    await financeiro.categorias('slug-1')
+    expect(fetch.mock.calls[0][0]).toContain('/users/slug-1/financeiro/categorias')
   })
 })
 
 describe('notasFiscais', () => {
-  it('status aceitos são autorizada, em_processamento ou cancelada', () => {
-    const statusValidos = ['autorizada', 'em_processamento', 'cancelada']
-    for (const nf of notasFiscais) {
-      expect(statusValidos).toContain(nf.status)
-    }
+  it('listar chama a rota correta', async () => {
+    mockFetch(200, { data: [] })
+    await notasFiscais.listar('slug-1')
+    expect(fetch.mock.calls[0][0]).toContain('/users/slug-1/notas-fiscais')
   })
 
-  it('notas autorizadas têm chave de acesso preenchida', () => {
-    const autorizadas = notasFiscais.filter(n => n.status === 'autorizada')
-    for (const nf of autorizadas) {
-      expect(nf.chave.length).toBeGreaterThan(0)
-    }
-  })
-})
-
-describe('nfeRecebidas', () => {
-  it('status é importada ou pendente', () => {
-    for (const nfe of nfeRecebidas) {
-      expect(['importada', 'pendente']).toContain(nfe.status)
-    }
-  })
-
-  it('todas são do tipo despesa', () => {
-    for (const nfe of nfeRecebidas) {
-      expect(nfe.tipo).toBe('despesa')
-    }
+  it('emitir faz POST com body', async () => {
+    mockFetch(201, { data: {} })
+    await notasFiscais.emitir('slug-1', { tipo: 'NF-e' })
+    const [, options] = fetch.mock.calls[0]
+    expect(options.method).toBe('POST')
+    expect(JSON.parse(options.body)).toEqual({ tipo: 'NF-e' })
   })
 })
 
-describe('resumoFinanceiro', () => {
-  it('tem todos os campos necessários', () => {
-    expect(resumoFinanceiro).toHaveProperty('saldoAtual')
-    expect(resumoFinanceiro).toHaveProperty('totalEntradas')
-    expect(resumoFinanceiro).toHaveProperty('totalSaidas')
-    expect(resumoFinanceiro).toHaveProperty('variacaoMes')
+describe('sefaz', () => {
+  it('listar chama a rota correta', async () => {
+    mockFetch(200, { data: [] })
+    await sefaz.listar('slug-1')
+    expect(fetch.mock.calls[0][0]).toContain('/users/slug-1/sefaz/nfe-recebidas')
   })
 
-  it('saldo atual é positivo', () => {
-    expect(resumoFinanceiro.saldoAtual).toBeGreaterThan(0)
-  })
-
-  it('entradas são maiores que saídas (resultado positivo)', () => {
-    expect(resumoFinanceiro.totalEntradas).toBeGreaterThan(resumoFinanceiro.totalSaidas)
-  })
-})
-
-describe('evolucaoMensal', () => {
-  it('tem exatamente 6 meses', () => {
-    expect(evolucaoMensal).toHaveLength(6)
-  })
-
-  it('receitas e despesas são não-negativos', () => {
-    for (const mes of evolucaoMensal) {
-      expect(mes.receitas).toBeGreaterThanOrEqual(0)
-      expect(mes.despesas).toBeGreaterThanOrEqual(0)
-    }
+  it('sincronizar faz POST', async () => {
+    mockFetch(200, {})
+    await sefaz.sincronizar('slug-1')
+    const [, options] = fetch.mock.calls[0]
+    expect(options.method).toBe('POST')
+    expect(fetch.mock.calls[0][0]).toContain('/users/slug-1/sefaz/sincronizar')
   })
 })
 
-describe('categorias', () => {
-  it('cada categoria tem id, nome, cor e icone', () => {
-    for (const cat of categorias) {
-      expect(cat).toHaveProperty('id')
-      expect(cat).toHaveProperty('nome')
-      expect(cat).toHaveProperty('cor')
-      expect(cat).toHaveProperty('icone')
-    }
-  })
-
-  it('IDs são únicos', () => {
-    const ids = categorias.map(c => c.id)
-    expect(new Set(ids).size).toBe(ids.length)
+describe('commodities', () => {
+  it('listar chama a rota correta', async () => {
+    mockFetch(200, { data: [] })
+    await commodities.listar()
+    expect(fetch.mock.calls[0][0]).toContain('/commodities')
   })
 })

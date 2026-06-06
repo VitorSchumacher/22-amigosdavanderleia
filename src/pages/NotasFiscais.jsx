@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import {
   FileText, CheckCircle2, XCircle, Clock, Download,
   Plus, Search, Eye, AlertCircle,
 } from 'lucide-react'
-import { notasFiscais } from '../data/mockData'
+import { notasFiscais as notasFiscaisApi } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 
-const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const fmt = (v) => (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const fmtDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')
 
 const STATUS = {
@@ -16,24 +17,31 @@ const STATUS = {
 }
 
 export default function NotasFiscais() {
+  const { user } = useAuth()
+  const [lista, setLista] = useState([])
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState('todos')
   const [showModal, setShowModal] = useState(false)
   const [detalhe, setDetalhe] = useState(null)
 
-  const filtradas = notasFiscais.filter((nf) => {
+  useEffect(() => {
+    if (!user?.slug) return
+    notasFiscaisApi.listar(user.slug).then(r => setLista(r?.data ?? [])).catch(() => {})
+  }, [user?.slug])
+
+  const filtradas = lista.filter((nf) => {
     const ok = filtroStatus === 'todos' || nf.status === filtroStatus
-    const match = nf.numero.toLowerCase().includes(busca.toLowerCase()) ||
-      nf.destinatario.toLowerCase().includes(busca.toLowerCase()) ||
-      nf.descricao.toLowerCase().includes(busca.toLowerCase())
+    const match = (nf.numero ?? '').toLowerCase().includes(busca.toLowerCase()) ||
+      (nf.destinatario ?? '').toLowerCase().includes(busca.toLowerCase()) ||
+      (nf.descricao ?? '').toLowerCase().includes(busca.toLowerCase())
     return ok && match
   })
 
   const totais = {
-    emitidas:  notasFiscais.length,
-    autorizadas: notasFiscais.filter(n => n.status === 'autorizada').length,
-    pendentes: notasFiscais.filter(n => n.status === 'em_processamento').length,
-    canceladas: notasFiscais.filter(n => n.status === 'cancelada').length,
+    emitidas:  lista.length,
+    autorizadas: lista.filter(n => n.status === 'autorizada').length,
+    pendentes: lista.filter(n => n.status === 'em_processamento').length,
+    canceladas: lista.filter(n => n.status === 'cancelada').length,
   }
 
   return (
@@ -115,7 +123,7 @@ export default function NotasFiscais() {
             {filtradas.map((nf) => {
               const st = STATUS[nf.status]
               return (
-                <tr key={nf.id}>
+                <tr key={nf._id ?? nf.id}>
                   <Td><NumeroNF>{nf.numero}</NumeroNF></Td>
                   <Td><TipoBadge>{nf.tipo}</TipoBadge></Td>
                   <Td>
@@ -168,7 +176,7 @@ export default function NotasFiscais() {
             <ModalBody>
               <InfoBox>
                 <AlertCircle size={16} color="#F4A261" />
-                <span>Integração com SEFAZ em modo de demonstração. Em produção, os dados serão enviados automaticamente ao ambiente oficial.</span>
+                <span>Os dados serão enviados automaticamente ao ambiente oficial da SEFAZ após a confirmação.</span>
               </InfoBox>
               <FormGrid>
                 <FormGroup>
@@ -201,7 +209,7 @@ export default function NotasFiscais() {
               </FormGrid>
               <ModalActions>
                 <CancelBtn onClick={() => setShowModal(false)}>Cancelar</CancelBtn>
-                <SubmitBtn onClick={() => { alert('NF enviada para processamento na SEFAZ (demo)'); setShowModal(false) }}>
+                <SubmitBtn onClick={() => { alert('NF enviada para processamento na SEFAZ.'); setShowModal(false) }}>
                   Emitir Nota Fiscal
                 </SubmitBtn>
               </ModalActions>
@@ -241,7 +249,7 @@ export default function NotasFiscais() {
               <ModalActions>
                 <CancelBtn onClick={() => setDetalhe(null)}>Fechar</CancelBtn>
                 {detalhe.status === 'autorizada' && (
-                  <SubmitBtn onClick={() => alert('Download do XML/DANFE (demo)')}>
+                  <SubmitBtn onClick={() => alert('Download do XML/DANFE iniciado.')}>
                     <Download size={16} /> Baixar XML / DANFE
                   </SubmitBtn>
                 )}

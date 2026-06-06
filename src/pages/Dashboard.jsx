@@ -1,24 +1,44 @@
+import { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import { theme } from '../styles/theme'
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import {
   TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight,
   CloudRain, Thermometer, Wind,
 } from 'lucide-react'
-import {
-  resumoFinanceiro, evolucaoMensal, gastosPorCategoria,
-  gastos, precosCommodities,
-} from '../data/mockData'
+import { financeiro, commodities } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
+import { normalizar } from '../utils/lancamento'
 
 const fmt = (v) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export default function Dashboard() {
+  const { user } = useAuth()
+  const [resumo, setResumo] = useState(null)
+  const [evolucao, setEvolucao] = useState([])
+  const [categorias, setCategorias] = useState([])
+  const [ultimos, setUltimos] = useState([])
+  const [cotacoes, setCotacoes] = useState([])
+  const [erro, setErro] = useState(null)
+
+  useEffect(() => {
+    if (!user?.slug) return
+    setErro(null)
+    Promise.all([
+      financeiro.resumo(user.slug).then(r => setResumo(r?.data ?? r)),
+      financeiro.evolucao(user.slug).then(r => setEvolucao(r?.data ?? [])),
+      financeiro.categorias(user.slug).then(r => setCategorias(r?.data ?? [])),
+      financeiro.listar(user.slug, { limit: 5 }).then(r => setUltimos((r?.data ?? []).map(normalizar))),
+    ]).catch(e => setErro(e.message ?? 'Erro ao carregar dados'))
+    commodities.listar().then(r => setCotacoes(r?.data ?? [])).catch(() => {})
+  }, [user?.slug])
+
   const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-  const ultimosGastos = gastos.slice(0, 5)
+  const ultimosGastos = ultimos
 
   return (
     <Page>
@@ -29,17 +49,19 @@ export default function Dashboard() {
         </div>
       </PageHeader>
 
+      {erro && <ErroMsg>{erro}</ErroMsg>}
+
       {/* Cards de resumo */}
       <CardsGrid>
         <SummaryCard>
           <CardIcon bg="#E9F5EE"><Wallet size={22} color={theme.colors.primary} /></CardIcon>
           <CardData>
             <CardLabel>Saldo Atual</CardLabel>
-            <CardValue>{fmt(resumoFinanceiro.saldoAtual)}</CardValue>
+            <CardValue>{fmt(resumo?.saldoAtual)}</CardValue>
           </CardData>
           <CardBadge positive>
             <TrendingUp size={13} />
-            +{resumoFinanceiro.variacaoMes}%
+            +{resumo?.variacaoMes ?? 0}%
           </CardBadge>
         </SummaryCard>
 
@@ -47,7 +69,7 @@ export default function Dashboard() {
           <CardIcon bg="#E9F5EE"><ArrowUpRight size={22} color={theme.colors.primaryLight} /></CardIcon>
           <CardData>
             <CardLabel>Entradas no mês</CardLabel>
-            <CardValue green>{fmt(resumoFinanceiro.totalEntradas)}</CardValue>
+            <CardValue green>{fmt(resumo?.totalEntradas)}</CardValue>
           </CardData>
         </SummaryCard>
 
@@ -55,7 +77,7 @@ export default function Dashboard() {
           <CardIcon bg="#FFF0EE"><ArrowDownRight size={22} color={theme.colors.danger} /></CardIcon>
           <CardData>
             <CardLabel>Saídas no mês</CardLabel>
-            <CardValue red>{fmt(resumoFinanceiro.totalSaidas)}</CardValue>
+            <CardValue red>{fmt(resumo?.totalSaidas)}</CardValue>
           </CardData>
         </SummaryCard>
 
@@ -64,7 +86,7 @@ export default function Dashboard() {
           <CardData>
             <CardLabel>Resultado</CardLabel>
             <CardValue green>
-              {fmt(resumoFinanceiro.totalEntradas - resumoFinanceiro.totalSaidas)}
+              {fmt((resumo?.totalEntradas ?? 0) - (resumo?.totalSaidas ?? 0))}
             </CardValue>
           </CardData>
         </SummaryCard>
@@ -75,7 +97,7 @@ export default function Dashboard() {
         <ChartCard>
           <ChartTitle>Evolução Mensal</ChartTitle>
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={evolucaoMensal} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+            <AreaChart data={evolucao} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="recGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#40916C" stopOpacity={0.3} />
@@ -103,8 +125,8 @@ export default function Dashboard() {
           <PieWrapper>
             <ResponsiveContainer width="55%" height={200}>
               <PieChart>
-                <Pie data={gastosPorCategoria} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value">
-                  {gastosPorCategoria.map((entry, i) => (
+                <Pie data={categorias} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value">
+                  {categorias.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
                   ))}
                 </Pie>
@@ -112,7 +134,7 @@ export default function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
             <PieLegend>
-              {gastosPorCategoria.map((cat) => (
+              {categorias.map((cat) => (
                 <PieLegendItem key={cat.name}>
                   <PieDot color={cat.fill} />
                   <PieLegendText>
@@ -132,7 +154,7 @@ export default function Dashboard() {
           <ChartTitle>Últimas Movimentações</ChartTitle>
           <TransactionList>
             {ultimosGastos.map((g) => (
-              <TransactionItem key={g.id}>
+              <TransactionItem key={g._id}>
                 <TransactionInfo>
                   <TransactionName>{g.descricao}</TransactionName>
                   <TransactionMeta>
@@ -156,10 +178,10 @@ export default function Dashboard() {
           <ChartCard>
             <ChartTitle>Cotações Hoje</ChartTitle>
             <CotacoesList>
-              {precosCommodities.map((c) => (
+              {cotacoes.map((c) => (
                 <CotacaoItem key={c.cultura}>
                   <CotacaoNome>{c.cultura}</CotacaoNome>
-                  <CotacaoPreco>{c.preco.toFixed(2)} {c.unidade}</CotacaoPreco>
+                  <CotacaoPreco>{(c.preco ?? 0).toFixed(2)} {c.unidade}</CotacaoPreco>
                   <CotacaoVar positivo={c.variacao > 0}>
                     {c.variacao > 0
                       ? <TrendingUp size={13} />
@@ -199,6 +221,12 @@ export default function Dashboard() {
     </Page>
   )
 }
+
+const ErroMsg = styled.p`
+  color: #E63946;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+`
 
 const Page = styled.div`
   padding: 32px;

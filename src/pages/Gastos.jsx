@@ -3,30 +3,9 @@ import styled from 'styled-components'
 import { Plus, Search, Filter, X, Trash2 } from 'lucide-react'
 import { financeiro } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
+import { normalizar, SLUG_TO_NOME } from '../utils/lancamento'
 
-const CATEGORIAS = [
-  { slug: 'insumos',      nome: 'Insumos' },
-  { slug: 'maquinario',   nome: 'Maquinário' },
-  { slug: 'mao_de_obra',  nome: 'Mão de Obra' },
-  { slug: 'combustivel',  nome: 'Combustível' },
-  { slug: 'arrendamento', nome: 'Arrendamento' },
-  { slug: 'receitas',     nome: 'Receitas' },
-  { slug: 'outros',       nome: 'Outros' },
-]
-
-const SLUG_TO_NOME = Object.fromEntries(CATEGORIAS.map(c => [c.slug, c.nome]))
-
-function normalizar(l) {
-  return {
-    _id: l._id,
-    descricao: l.description,
-    categoria: SLUG_TO_NOME[l.category] ?? l.category,
-    valor: l.value,
-    data: l.date,
-    tipo: l.type === 'receita' ? 'entrada' : 'saida',
-    origem: l.origin,
-  }
-}
+const CATEGORIAS = Object.entries(SLUG_TO_NOME).map(([slug, nome]) => ({ slug, nome }))
 
 const fmt = (v) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })

@@ -62,6 +62,23 @@ export const financeiro = {
   },
   criar: (slug, body) => api.post(`/users/${slug}/financeiro/lancamentos`, body),
   remover: (slug, id) => api.delete(`/users/${slug}/financeiro/lancamentos/${id}`),
+  resumo: (slug) => api.get(`/users/${slug}/financeiro/resumo`),
+  evolucao: (slug) => api.get(`/users/${slug}/financeiro/evolucao`),
+  categorias: (slug) => api.get(`/users/${slug}/financeiro/categorias`),
+}
+
+export const notasFiscais = {
+  listar: (slug) => api.get(`/users/${slug}/notas-fiscais`),
+  emitir: (slug, body) => api.post(`/users/${slug}/notas-fiscais`, body),
+}
+
+export const sefaz = {
+  listar: (slug) => api.get(`/users/${slug}/sefaz/nfe-recebidas`),
+  sincronizar: (slug) => api.post(`/users/${slug}/sefaz/sincronizar`, {}),
+}
+
+export const commodities = {
+  listar: () => api.get('/commodities'),
 }
 
 export const estoque = {

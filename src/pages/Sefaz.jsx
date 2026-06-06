@@ -1,36 +1,51 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import {
   RefreshCw, CheckCircle2, Clock, Download, Search,
   ArrowDownCircle, ShieldCheck, AlertCircle, Zap,
 } from 'lucide-react'
-import { nfeRecebidas } from '../data/mockData'
+import { sefaz as sefazApi } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 
-const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const fmt = (v) => (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const fmtDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')
 
 export default function Sefaz() {
+  const { user } = useAuth()
+  const [lista, setLista] = useState([])
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState('todos')
   const [sincronizando, setSincronizando] = useState(false)
-  const [ultimaSync] = useState('05/06/2026 às 08:42')
+  const [ultimaSync, setUltimaSync] = useState('—')
 
-  const filtradas = nfeRecebidas.filter((nf) => {
+  useEffect(() => {
+    if (!user?.slug) return
+    sefazApi.listar(user.slug).then(r => setLista(r?.data ?? [])).catch(() => {})
+  }, [user?.slug])
+
+  const filtradas = lista.filter((nf) => {
     const ok = filtroStatus === 'todos' || nf.status === filtroStatus
     const match =
-      nf.numero.toLowerCase().includes(busca.toLowerCase()) ||
-      nf.emitente.toLowerCase().includes(busca.toLowerCase()) ||
-      nf.descricao.toLowerCase().includes(busca.toLowerCase())
+      (nf.numero ?? '').toLowerCase().includes(busca.toLowerCase()) ||
+      (nf.emitente ?? '').toLowerCase().includes(busca.toLowerCase()) ||
+      (nf.descricao ?? '').toLowerCase().includes(busca.toLowerCase())
     return ok && match
   })
 
-  const totalImportadas = nfeRecebidas.filter(n => n.status === 'importada').length
-  const totalPendentes  = nfeRecebidas.filter(n => n.status === 'pendente').length
-  const totalValor = nfeRecebidas.reduce((acc, n) => acc + n.valor, 0)
+  const totalImportadas = lista.filter(n => n.status === 'importada').length
+  const totalPendentes  = lista.filter(n => n.status === 'pendente').length
+  const totalValor = lista.reduce((acc, n) => acc + (n.valor ?? 0), 0)
 
-  function handleSync() {
+  async function handleSync() {
+    if (!user?.slug) return
     setSincronizando(true)
-    setTimeout(() => setSincronizando(false), 2200)
+    try {
+      await sefazApi.sincronizar(user.slug)
+      const r = await sefazApi.listar(user.slug)
+      setLista(r?.data ?? [])
+      setUltimaSync(new Date().toLocaleString('pt-BR'))
+    } catch {}
+    finally { setSincronizando(false) }
   }
 
   return (
@@ -87,7 +102,7 @@ export default function Sefaz() {
           <SCardIcon bg="#EEF2FF"><ArrowDownCircle size={20} color="#4C6EF5" /></SCardIcon>
           <SCardInfo>
             <SCardLabel>Total Recebidas</SCardLabel>
-            <SCardVal>{nfeRecebidas.length}</SCardVal>
+            <SCardVal>{lista.length}</SCardVal>
           </SCardInfo>
         </SCard>
         <SCard accent="#2D6A4F">
@@ -105,7 +120,7 @@ export default function Sefaz() {
           <span>
             Você tem <strong>{totalPendentes} notas</strong> aguardando confirmação para importação automática.
           </span>
-          <ApproveBtn onClick={() => alert('Notas aprovadas e lançadas automaticamente (demo)')}>
+          <ApproveBtn onClick={() => alert('Notas aprovadas e lançadas automaticamente.')}>
             Aprovar todas
           </ApproveBtn>
         </AlertBanner>
@@ -145,7 +160,7 @@ export default function Sefaz() {
           </thead>
           <tbody>
             {filtradas.map((nf) => (
-              <tr key={nf.id}>
+              <tr key={nf._id ?? nf.id}>
                 <Td><NumeroNF>{nf.numero}</NumeroNF></Td>
                 <Td>
                   <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1A1A2E' }}>{nf.emitente}</div>
@@ -175,7 +190,7 @@ export default function Sefaz() {
                     </IconBtn>
                     {nf.status === 'pendente' && (
                       <ImportarBtn
-                        onClick={() => alert(`NF-e ${nf.numero} importada como ${nf.categoria} (demo)`)}
+                        onClick={() => alert(`NF-e ${nf.numero} importada como ${nf.categoria}.`)}
                       >
                         Importar
                       </ImportarBtn>

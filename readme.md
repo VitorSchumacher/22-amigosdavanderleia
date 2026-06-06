@@ -1,5 +1,7 @@
 # LINK youtube: https://youtu.be/I8f29gCC0fU
 
+# LINK Vercel: https://22-amigosdavanderleia.vercel.app
+
 # Guiar — Controle Financeiro para Produtores Rurais
 
 Plataforma de gestão financeira voltada para produtores rurais de pequeno e médio porte, combinando uma interface web com interação via WhatsApp e inteligência artificial.
@@ -133,39 +135,34 @@ Módulos disponíveis:
 | --- | --- |
 | `api` | Métodos base: `get`, `post`, `put`, `delete` |
 | `whatsapp` | `verifyOtp`, `resendOtp` — verificação e reenvio de OTP |
-| `financeiro` | `listar`, `criar`, `remover` lançamentos |
+| `financeiro` | `listar`, `criar`, `remover`, `resumo`, `evolucao`, `categorias` |
+| `notasFiscais` | `listar`, `emitir` |
+| `sefaz` | `listar`, `sincronizar` |
+| `commodities` | `listar` |
 | `estoque` | `listar`, `criar`, `resumo`, `alertas`, `movimentacoes`, `buscar`, `atualizar`, `remover`, `movimentar` |
 
 ---
 
 ## Features
 
-### Integradas com API Real
-
 - [x] Autenticação — login, cadastro e validação de sessão (`/auth/login`, `/auth/register`, `/auth/me`)
 - [x] Verificação e reenvio de OTP via WhatsApp (`/whatsapp/verify-otp`, `/whatsapp/resend-otp`)
-- [x] **Gastos** — listagem, criação e remoção de lançamentos financeiros com filtros por descrição, categoria e tipo
-- [x] **Estoque** — listagem, cadastro, movimentação e resumo de itens; alertas de estoque mínimo
-- [x] **Configurações** — edição de perfil (nome, e-mail, WhatsApp, data de nascimento)
-
-### Implementadas (Frontend com dados de demonstração)
-
-- [x] Landing page com apresentação do produto
+- [x] Landing page com apresentação do produto e animações de entrada
 - [x] Rotas protegidas com contexto de autenticação (JWT)
 - [x] Sidebar responsiva com navegação completa
-- [x] **Dashboard** — cards de resumo financeiro, gráfico de evolução mensal (área), gastos por categoria (pizza), últimos lançamentos e cotações de commodities
-- [x] **Relatórios** — visão por safra e categoria
-- [x] **Notas Fiscais** — listagem de NF-e e NFS-e com status
-- [x] **SEFAZ** — painel de NF-e recebidas e indicador de conexão
+- [x] **Dashboard** — cards de resumo financeiro, gráfico de evolução mensal (área), gastos por categoria (pizza), últimas movimentações e cotações de commodities
+- [x] **Gastos** — listagem, criação e remoção de lançamentos financeiros com filtros por descrição, categoria e tipo
+- [x] **Relatórios** — comparativo mensal e breakdown por categoria
+- [x] **Notas Fiscais** — listagem de NF-e e NFS-e com status, emissão e download
+- [x] **SEFAZ** — painel de NF-e recebidas, sincronização e importação automática
+- [x] **Estoque** — listagem, cadastro, movimentação e resumo de itens; alertas de estoque mínimo
+- [x] **Configurações** — edição de perfil (nome, e-mail, WhatsApp, data de nascimento)
 - [x] Tema global com design tokens (cores, tipografia, espaçamento)
-- [x] Animações de entrada com `IntersectionObserver` (`useInView`)
 - [x] `ErrorBoundary` por rota — erros isolados não derrubam toda a aplicação
 
-### Planejadas / Em Desenvolvimento
+### Em Desenvolvimento
 
-- [ ] Integração real com backend para Dashboard, Relatórios, Notas Fiscais e SEFAZ
 - [ ] Emissão de NF-e com transmissão à SEFAZ
-- [ ] Monitoramento automático de CNPJ na base SEFAZ
 - [ ] Bot WhatsApp com IA para registro de gastos por mensagem
 - [ ] Consulta de previsão do tempo e alertas climáticos via WhatsApp
 - [ ] Alertas automáticos de estoque mínimo via WhatsApp
@@ -181,7 +178,6 @@ Suite com Vitest + Testing Library cobrindo:
 - `AuthContext` — carregamento de sessão, login, logout e erro de token inválido
 - `PrivateRoute` — redirecionamento quando não autenticado
 - `Login` — submissão de formulário e tratamento de erro 401
-- `mockData` — integridade dos dados de demonstração
 - `api` — contrato do cliente HTTP
 
 ```bash

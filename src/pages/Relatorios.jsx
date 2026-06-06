@@ -1,13 +1,25 @@
+import { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts'
-import { evolucaoMensal, gastosPorCategoria } from '../data/mockData'
+import { financeiro } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 
-const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const fmt = (v) => (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export default function Relatorios() {
+  const { user } = useAuth()
+  const [evolucao, setEvolucao] = useState([])
+  const [categorias, setCategorias] = useState([])
+
+  useEffect(() => {
+    if (!user?.slug) return
+    financeiro.evolucao(user.slug).then(r => setEvolucao(r?.data ?? [])).catch(() => {})
+    financeiro.categorias(user.slug).then(r => setCategorias(r?.data ?? [])).catch(() => {})
+  }, [user?.slug])
+
   return (
     <Page>
       <PageHeader>
@@ -16,7 +28,7 @@ export default function Relatorios() {
       </PageHeader>
 
       <CardsRow>
-        {gastosPorCategoria.map(cat => (
+        {categorias.map(cat => (
           <CatCard key={cat.name}>
             <CatDot color={cat.fill} />
             <CatInfo>
@@ -30,7 +42,7 @@ export default function Relatorios() {
       <ChartCard>
         <ChartTitle>Comparativo Mensal — Receitas vs Despesas</ChartTitle>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={evolucaoMensal} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+          <BarChart data={evolucao} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
