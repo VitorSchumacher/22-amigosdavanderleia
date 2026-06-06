@@ -39,7 +39,7 @@ export default function Cadastro() {
       <Card>
         <Logo>
           <Sprout size={28} color="#2D6A4F" />
-          <LogoText>AgroFinance</LogoText>
+          <LogoText>Guiar</LogoText>
         </Logo>
 
         <Heading>Criar conta</Heading>

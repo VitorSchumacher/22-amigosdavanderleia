@@ -18,7 +18,7 @@ export default function Login() {
       <Card>
         <Logo>
           <Sprout size={32} color="#2D6A4F" />
-          <LogoText>AgroFinance</LogoText>
+          <LogoText>Guiar</LogoText>
         </Logo>
 
         <Heading>Bem-vindo de volta</Heading>

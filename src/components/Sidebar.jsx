@@ -25,7 +25,7 @@ export default function Sidebar() {
     <Aside>
       <LogoArea>
         <Sprout size={26} color="#40916C" />
-        <LogoText>AgroFinance</LogoText>
+        <LogoText>Guiar</LogoText>
       </LogoArea>
 
       <Nav>

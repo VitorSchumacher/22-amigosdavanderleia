@@ -122,7 +122,7 @@ export default function Landing() {
         <NavInner>
           <NavLogo>
             <Sprout size={26} color="#40916C" />
-            <span>AgroFinance</span>
+            <span>Guiar</span>
           </NavLogo>
           <NavLinks>
             <a href="#funcionalidades">Funcionalidades</a>
@@ -193,7 +193,7 @@ export default function Landing() {
             <PhoneScreen>
               <PhoneHeader>
                 <Sprout size={14} color="#40916C" />
-                <span>AgroFinance IA</span>
+                <span>Guiar IA</span>
                 <OnlineStatus />
               </PhoneHeader>
               <PhoneBubble bot>Olá João! Soja fechou hoje a R$ 145,50/sc. Alta de 2,3% 📈</PhoneBubble>
@@ -401,7 +401,7 @@ export default function Landing() {
           </PreviewBar>
           <PreviewScreen>
             <PreviewSidebar>
-              <PreviewLogo><Sprout size={16} color="#40916C" />AgroFinance</PreviewLogo>
+              <PreviewLogo><Sprout size={16} color="#40916C" />Guiar</PreviewLogo>
               {['Dashboard', 'Gastos', 'Relatórios'].map((item, i) => (
                 <PreviewNavItem key={item} active={i === 0}>{item}</PreviewNavItem>
               ))}
@@ -497,12 +497,12 @@ export default function Landing() {
         <FooterInner>
           <FooterLogo>
             <Sprout size={22} color="#40916C" />
-            <span>AgroFinance</span>
+            <span>Guiar</span>
           </FooterLogo>
           <FooterTagline>Gestão financeira para o produtor rural brasileiro.</FooterTagline>
         </FooterInner>
         <FooterBottom>
-          <span>© 2026 AgroFinance. Todos os direitos reservados.</span>
+          <span>© 2026 Guiar. Todos os direitos reservados.</span>
           <span>Feito com ❤️ para o campo brasileiro</span>
         </FooterBottom>
       </Footer>
