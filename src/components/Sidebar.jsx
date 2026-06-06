@@ -71,7 +71,7 @@ export default function Sidebar() {
 const Aside = styled.aside`
   width: 240px;
   min-height: 100vh;
-  background: #1B4332;
+  background: ${({ theme }) => theme.colors.primaryDark};
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -107,7 +107,7 @@ const NavItem = styled(NavLink)`
   transition: all 0.15s;
 
   &:hover { background: rgba(255,255,255,0.08); color: #fff; }
-  &.active { background: #2D6A4F; color: #fff; }
+  &.active { background: ${({ theme }) => theme.colors.primary}; color: #fff; }
 `
 
 const WhatsAppInfo = styled.div`
@@ -140,7 +140,7 @@ const UserArea = styled.div`
 const Avatar = styled.div`
   width: 36px;
   height: 36px;
-  background: #40916C;
+  background: ${({ theme }) => theme.colors.primaryLight};
   border-radius: 50%;
   display: flex;
   align-items: center;

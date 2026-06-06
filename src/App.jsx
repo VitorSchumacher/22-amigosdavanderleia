@@ -5,6 +5,7 @@ import { GlobalStyles } from './styles/GlobalStyles'
 import { AuthProvider } from './contexts/AuthContext'
 import AppLayout from './components/AppLayout'
 import PrivateRoute from './components/PrivateRoute'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Cadastro from './pages/Cadastro'
@@ -30,13 +31,13 @@ export default function App() {
             <Route path="/whatsapp/send-otp" element={<WhatsappOTP />} />
             <Route element={<PrivateRoute />}>
               <Route element={<AppLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/gastos" element={<Gastos />} />
-                <Route path="/relatorios" element={<Relatorios />} />
-                <Route path="/notas-fiscais" element={<NotasFiscais />} />
-                <Route path="/sefaz" element={<Sefaz />} />
-                <Route path="/estoque" element={<Estoque />} />
-                <Route path="/configuracoes" element={<Configuracoes />} />
+                <Route path="/dashboard" element={<ErrorBoundary key="dashboard"><Dashboard /></ErrorBoundary>} />
+                <Route path="/gastos" element={<ErrorBoundary key="gastos"><Gastos /></ErrorBoundary>} />
+                <Route path="/relatorios" element={<ErrorBoundary key="relatorios"><Relatorios /></ErrorBoundary>} />
+                <Route path="/notas-fiscais" element={<ErrorBoundary key="notas-fiscais"><NotasFiscais /></ErrorBoundary>} />
+                <Route path="/sefaz" element={<ErrorBoundary key="sefaz"><Sefaz /></ErrorBoundary>} />
+                <Route path="/estoque" element={<ErrorBoundary key="estoque"><Estoque /></ErrorBoundary>} />
+                <Route path="/configuracoes" element={<ErrorBoundary key="configuracoes"><Configuracoes /></ErrorBoundary>} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

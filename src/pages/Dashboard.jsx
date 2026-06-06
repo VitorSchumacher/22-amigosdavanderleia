@@ -1,4 +1,5 @@
 import styled from 'styled-components'
+import { theme } from '../styles/theme'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -15,6 +16,8 @@ import {
 const fmt = (v) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
+const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+
 export default function Dashboard() {
   const ultimosGastos = gastos.slice(0, 5)
 
@@ -23,14 +26,14 @@ export default function Dashboard() {
       <PageHeader>
         <div>
           <PageTitle>Dashboard</PageTitle>
-          <PageSub>Maio de 2026 — Fazenda Boa Esperança</PageSub>
+          <PageSub>{mesAtual.charAt(0).toUpperCase() + mesAtual.slice(1)} — Fazenda Boa Esperança</PageSub>
         </div>
       </PageHeader>
 
       {/* Cards de resumo */}
       <CardsGrid>
-        <SummaryCard color="#2D6A4F">
-          <CardIcon bg="#E9F5EE"><Wallet size={22} color="#2D6A4F" /></CardIcon>
+        <SummaryCard>
+          <CardIcon bg="#E9F5EE"><Wallet size={22} color={theme.colors.primary} /></CardIcon>
           <CardData>
             <CardLabel>Saldo Atual</CardLabel>
             <CardValue>{fmt(resumoFinanceiro.saldoAtual)}</CardValue>
@@ -42,7 +45,7 @@ export default function Dashboard() {
         </SummaryCard>
 
         <SummaryCard>
-          <CardIcon bg="#E9F5EE"><ArrowUpRight size={22} color="#40916C" /></CardIcon>
+          <CardIcon bg="#E9F5EE"><ArrowUpRight size={22} color={theme.colors.primaryLight} /></CardIcon>
           <CardData>
             <CardLabel>Entradas no mês</CardLabel>
             <CardValue green>{fmt(resumoFinanceiro.totalEntradas)}</CardValue>
@@ -50,7 +53,7 @@ export default function Dashboard() {
         </SummaryCard>
 
         <SummaryCard>
-          <CardIcon bg="#FFF0EE"><ArrowDownRight size={22} color="#E63946" /></CardIcon>
+          <CardIcon bg="#FFF0EE"><ArrowDownRight size={22} color={theme.colors.danger} /></CardIcon>
           <CardData>
             <CardLabel>Saídas no mês</CardLabel>
             <CardValue red>{fmt(resumoFinanceiro.totalSaidas)}</CardValue>
@@ -58,7 +61,7 @@ export default function Dashboard() {
         </SummaryCard>
 
         <SummaryCard>
-          <CardIcon bg="#FFF8EE"><TrendingUp size={22} color="#F4A261" /></CardIcon>
+          <CardIcon bg="#FFF8EE"><TrendingUp size={22} color={theme.colors.accent} /></CardIcon>
           <CardData>
             <CardLabel>Resultado</CardLabel>
             <CardValue green>
@@ -173,7 +176,7 @@ export default function Dashboard() {
             <ChartTitle>Previsão do Tempo — Sorriso MT</ChartTitle>
             <ClimateGrid>
               <ClimateItem>
-                <Thermometer size={18} color="#F4A261" />
+                <Thermometer size={18} color={theme.colors.accent} />
                 <ClimateLabel>Temperatura</ClimateLabel>
                 <ClimateValue>28°C / 18°C</ClimateValue>
               </ClimateItem>
@@ -183,7 +186,7 @@ export default function Dashboard() {
                 <ClimateValue>12mm</ClimateValue>
               </ClimateItem>
               <ClimateItem>
-                <Wind size={18} color="#74C69D" />
+                <Wind size={18} color={theme.colors.secondary} />
                 <ClimateLabel>Vento</ClimateLabel>
                 <ClimateValue>22 km/h</ClimateValue>
               </ClimateItem>
@@ -213,12 +216,12 @@ const PageHeader = styled.div`
 const PageTitle = styled.h1`
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1A1A2E;
+  color: ${({ theme }) => theme.colors.text.primary};
 `
 
 const PageSub = styled.p`
   font-size: 0.875rem;
-  color: #6C757D;
+  color: ${({ theme }) => theme.colors.text.secondary};
   margin-top: 2px;
 `
 
@@ -268,7 +271,7 @@ const CardLabel = styled.p`
 const CardValue = styled.p`
   font-size: 1.125rem;
   font-weight: 700;
-  color: ${({ green, red }) => green ? '#40916C' : red ? '#E63946' : '#1A1A2E'};
+  color: ${({ green, red, theme }) => green ? theme.colors.success : red ? theme.colors.danger : theme.colors.text.primary};
 `
 
 const CardBadge = styled.span`
@@ -280,7 +283,7 @@ const CardBadge = styled.span`
   gap: 3px;
   font-size: 0.7rem;
   font-weight: 600;
-  color: ${({ positive }) => positive ? '#40916C' : '#E63946'};
+  color: ${({ positive, theme }) => positive ? theme.colors.success : theme.colors.danger};
   background: ${({ positive }) => positive ? '#E9F5EE' : '#FFF0EE'};
   padding: 3px 7px;
   border-radius: 99px;
@@ -307,7 +310,7 @@ const ChartCard = styled.div`
 const ChartTitle = styled.h2`
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #1A1A2E;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin-bottom: 16px;
 `
 
@@ -375,7 +378,7 @@ const TransactionInfo = styled.div``
 const TransactionName = styled.p`
   font-size: 0.875rem;
   font-weight: 500;
-  color: #1A1A2E;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin-bottom: 4px;
 `
 
@@ -384,7 +387,7 @@ const TransactionMeta = styled.div`
   align-items: center;
   gap: 6px;
   font-size: 0.72rem;
-  color: #6C757D;
+  color: ${({ theme }) => theme.colors.text.secondary};
 `
 
 const TagCategoria = styled.span`
@@ -405,7 +408,7 @@ const TagOrigem = styled.span`
 const TransactionValue = styled.p`
   font-size: 0.9375rem;
   font-weight: 600;
-  color: ${({ entrada }) => entrada ? '#40916C' : '#E63946'};
+  color: ${({ entrada, theme }) => entrada ? theme.colors.success : theme.colors.danger};
 `
 
 const CotacoesList = styled.div`
@@ -423,14 +426,14 @@ const CotacaoItem = styled.div`
 const CotacaoNome = styled.span`
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1A1A2E;
+  color: ${({ theme }) => theme.colors.text.primary};
   width: 70px;
 `
 
 const CotacaoPreco = styled.span`
   flex: 1;
   font-size: 0.875rem;
-  color: #495057;
+  color: ${({ theme }) => theme.colors.text.secondary};
 `
 
 const CotacaoVar = styled.span`
@@ -439,7 +442,7 @@ const CotacaoVar = styled.span`
   gap: 3px;
   font-size: 0.8rem;
   font-weight: 600;
-  color: ${({ positivo }) => positivo ? '#40916C' : '#E63946'};
+  color: ${({ positivo, theme }) => positivo ? theme.colors.success : theme.colors.danger};
   background: ${({ positivo }) => positivo ? '#E9F5EE' : '#FFF0EE'};
   padding: 3px 8px;
   border-radius: 99px;
@@ -464,13 +467,13 @@ const ClimateItem = styled.div`
 
 const ClimateLabel = styled.span`
   font-size: 0.7rem;
-  color: #6C757D;
+  color: ${({ theme }) => theme.colors.text.secondary};
 `
 
 const ClimateValue = styled.span`
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1A1A2E;
+  color: ${({ theme }) => theme.colors.text.primary};
 `
 
 const AlertaClima = styled.div`

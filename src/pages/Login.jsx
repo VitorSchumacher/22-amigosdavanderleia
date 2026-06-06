@@ -4,6 +4,7 @@ import styled from 'styled-components'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import logoImg from '../assets/logo.png'
+import farmVideo from '../assets/farm-bg.mp4'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -33,6 +34,8 @@ export default function Login() {
 
   return (
     <PageWrapper>
+      <VideoBg autoPlay loop muted playsInline src={farmVideo} />
+      <Overlay />
       <Card>
         <Logo>
           <LogoImg src={logoImg} alt="Guiar" />
@@ -69,7 +72,7 @@ export default function Login() {
             </PasswordWrapper>
           </Field>
 
-          <ForgotLink to="#">Esqueci minha senha</ForgotLink>
+          <ForgotText>Esqueci minha senha</ForgotText>
 
           {error && <ErrorMsg>{error}</ErrorMsg>}
 
@@ -83,7 +86,6 @@ export default function Login() {
         </RegisterText>
       </Card>
 
-      <Background />
     </PageWrapper>
   )
 }
@@ -93,8 +95,25 @@ const PageWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 50%, #40916C 100%);
   padding: 24px;
+  position: relative;
+  overflow: hidden;
+`
+
+const VideoBg = styled.video`
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+`
+
+const Overlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1;
 `
 
 const Card = styled.div`
@@ -103,9 +122,9 @@ const Card = styled.div`
   padding: 48px 40px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   position: relative;
-  z-index: 1;
+  z-index: 2;
 `
 
 const Logo = styled.div`
@@ -122,13 +141,13 @@ const LogoImg = styled.img`
 const Heading = styled.h1`
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1A1A2E;
+  color: ${({ theme }) => theme.colors.text.primary};
   margin-bottom: 6px;
 `
 
 const Subheading = styled.p`
   font-size: 0.875rem;
-  color: #6C757D;
+  color: ${({ theme }) => theme.colors.text.secondary};
   margin-bottom: 32px;
 `
 
@@ -147,21 +166,21 @@ const Field = styled.div`
 const Label = styled.label`
   font-size: 0.875rem;
   font-weight: 500;
-  color: #1A1A2E;
+  color: ${({ theme }) => theme.colors.text.primary};
 `
 
 const Input = styled.input`
   width: 100%;
   padding: 12px 16px;
-  border: 1.5px solid #DEE2E6;
+  border: 1.5px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
   font-size: 0.9375rem;
-  color: #1A1A2E;
+  color: ${({ theme }) => theme.colors.text.primary};
   outline: none;
   transition: border-color 0.2s;
 
-  &:focus { border-color: #2D6A4F; }
-  &::placeholder { color: #ADB5BD; }
+  &:focus { border-color: ${({ theme }) => theme.colors.primary}; }
+  &::placeholder { color: ${({ theme }) => theme.colors.text.muted}; }
 `
 
 const PasswordWrapper = styled.div`
@@ -173,17 +192,16 @@ const EyeBtn = styled.button`
   right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: #6C757D;
+  color: ${({ theme }) => theme.colors.text.secondary};
   display: flex;
   align-items: center;
 `
 
-const ForgotLink = styled(Link)`
+const ForgotText = styled.span`
   font-size: 0.8125rem;
-  color: #2D6A4F;
+  color: ${({ theme }) => theme.colors.text.muted};
   text-align: right;
   margin-top: -8px;
-  &:hover { text-decoration: underline; }
 `
 
 const ErrorMsg = styled.p`
@@ -196,7 +214,7 @@ const ErrorMsg = styled.p`
 `
 
 const SubmitBtn = styled.button`
-  background: #2D6A4F;
+  background: ${({ theme }) => theme.colors.primary};
   color: #fff;
   font-size: 1rem;
   font-weight: 600;
@@ -206,25 +224,19 @@ const SubmitBtn = styled.button`
   transition: background 0.2s;
   opacity: ${({ disabled }) => disabled ? 0.7 : 1};
 
-  &:hover:not(:disabled) { background: #1B4332; }
+  &:hover:not(:disabled) { background: ${({ theme }) => theme.colors.primaryDark}; }
 `
 
 const RegisterText = styled.p`
   text-align: center;
   font-size: 0.875rem;
-  color: #6C757D;
+  color: ${({ theme }) => theme.colors.text.secondary};
   margin-top: 24px;
 
   a {
-    color: #2D6A4F;
+    color: ${({ theme }) => theme.colors.primary};
     font-weight: 600;
     &:hover { text-decoration: underline; }
   }
 `
 
-const Background = styled.div`
-  position: fixed;
-  inset: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  z-index: 0;
-`
