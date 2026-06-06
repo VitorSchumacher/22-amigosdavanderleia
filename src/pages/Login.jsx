@@ -2,15 +2,32 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import styled from 'styled-components'
 import { Sprout, Eye, EyeOff } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    navigate('/dashboard')
+    setError('')
+    setLoading(true)
+    try {
+      await login(form.email, form.password)
+      navigate('/dashboard')
+    } catch (err) {
+      if (err.status === 401) {
+        setError('E-mail ou senha incorretos.')
+      } else {
+        setError(err.message ?? 'Erro ao fazer login. Tente novamente.')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -54,7 +71,11 @@ export default function Login() {
 
           <ForgotLink to="#">Esqueci minha senha</ForgotLink>
 
-          <SubmitBtn type="submit">Entrar</SubmitBtn>
+          {error && <ErrorMsg>{error}</ErrorMsg>}
+
+          <SubmitBtn type="submit" disabled={loading}>
+            {loading ? 'Entrando...' : 'Entrar'}
+          </SubmitBtn>
         </Form>
 
         <RegisterText>
@@ -141,13 +162,8 @@ const Input = styled.input`
   outline: none;
   transition: border-color 0.2s;
 
-  &:focus {
-    border-color: #2D6A4F;
-  }
-
-  &::placeholder {
-    color: #ADB5BD;
-  }
+  &:focus { border-color: #2D6A4F; }
+  &::placeholder { color: #ADB5BD; }
 `
 
 const PasswordWrapper = styled.div`
@@ -169,10 +185,16 @@ const ForgotLink = styled(Link)`
   color: #2D6A4F;
   text-align: right;
   margin-top: -8px;
+  &:hover { text-decoration: underline; }
+`
 
-  &:hover {
-    text-decoration: underline;
-  }
+const ErrorMsg = styled.p`
+  background: #FFF0EE;
+  border: 1px solid #FFCDD2;
+  color: #C62828;
+  font-size: 0.875rem;
+  padding: 10px 14px;
+  border-radius: 8px;
 `
 
 const SubmitBtn = styled.button`
@@ -184,10 +206,9 @@ const SubmitBtn = styled.button`
   border-radius: 8px;
   margin-top: 4px;
   transition: background 0.2s;
+  opacity: ${({ disabled }) => disabled ? 0.7 : 1};
 
-  &:hover {
-    background: #1B4332;
-  }
+  &:hover:not(:disabled) { background: #1B4332; }
 `
 
 const RegisterText = styled.p`
@@ -199,10 +220,7 @@ const RegisterText = styled.p`
   a {
     color: #2D6A4F;
     font-weight: 600;
-
-    &:hover {
-      text-decoration: underline;
-    }
+    &:hover { text-decoration: underline; }
   }
 `
 

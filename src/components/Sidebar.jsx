@@ -1,25 +1,32 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import {
-  LayoutDashboard,
-  Receipt,
-  BarChart2,
-  Settings,
-  LogOut,
-  Sprout,
-  MessageCircle,
+  LayoutDashboard, Receipt, BarChart2, Settings,
+  LogOut, Sprout, MessageCircle, FileText, ShieldCheck, Package,
 } from 'lucide-react'
-import { mockUser } from '../data/mockData'
+import { useAuth } from '../contexts/AuthContext'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/gastos', icon: Receipt, label: 'Gastos' },
   { to: '/relatorios', icon: BarChart2, label: 'Relatórios' },
+  { to: '/notas-fiscais', icon: FileText, label: 'Notas Fiscais' },
+  { to: '/sefaz', icon: ShieldCheck, label: 'SEFAZ' },
+  { to: '/estoque', icon: Package, label: 'Estoque' },
   { to: '/configuracoes', icon: Settings, label: 'Configurações' },
 ]
 
 export default function Sidebar() {
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
+  function handleLogout() {
+    logout()
+    navigate('/login')
+  }
+
+  const firstName = user?.name?.split(' ').slice(0, 2).join(' ') ?? ''
+  const initials = user?.name?.charAt(0).toUpperCase() ?? '?'
 
   return (
     <Aside>
@@ -37,21 +44,23 @@ export default function Sidebar() {
         ))}
       </Nav>
 
-      <WhatsAppInfo>
-        <MessageCircle size={16} color="#25D366" />
-        <WhatsAppText>
-          <strong>WhatsApp vinculado</strong>
-          <span>{mockUser.phone}</span>
-        </WhatsAppText>
-      </WhatsAppInfo>
+      {user?.phone && (
+        <WhatsAppInfo>
+          <MessageCircle size={16} color="#25D366" />
+          <WhatsAppText>
+            <strong>WhatsApp vinculado</strong>
+            <span>{user.phone}</span>
+          </WhatsAppText>
+        </WhatsAppInfo>
+      )}
 
       <UserArea>
-        <Avatar>{mockUser.name.charAt(0)}</Avatar>
+        <Avatar>{initials}</Avatar>
         <UserInfo>
-          <UserName>{mockUser.name.split(' ')[0]} {mockUser.name.split(' ')[1]}</UserName>
-          <UserFarm>{mockUser.fazenda}</UserFarm>
+          <UserName>{firstName}</UserName>
+          <UserEmail>{user?.email ?? ''}</UserEmail>
         </UserInfo>
-        <LogOutBtn onClick={() => navigate('/login')} title="Sair">
+        <LogOutBtn onClick={handleLogout} title="Sair">
           <LogOut size={18} />
         </LogOutBtn>
       </UserArea>
@@ -100,22 +109,15 @@ const NavItem = styled(NavLink)`
   color: rgba(255,255,255,0.65);
   transition: all 0.15s;
 
-  &:hover {
-    background: rgba(255,255,255,0.08);
-    color: #fff;
-  }
-
-  &.active {
-    background: #2D6A4F;
-    color: #fff;
-  }
+  &:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  &.active { background: #2D6A4F; color: #fff; }
 `
 
 const WhatsAppInfo = styled.div`
   margin: 0 12px 12px;
   padding: 10px 12px;
-  background: rgba(37, 211, 102, 0.1);
-  border: 1px solid rgba(37, 211, 102, 0.2);
+  background: rgba(37,211,102,0.1);
+  border: 1px solid rgba(37,211,102,0.2);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -126,16 +128,8 @@ const WhatsAppText = styled.div`
   display: flex;
   flex-direction: column;
 
-  strong {
-    font-size: 0.75rem;
-    color: #fff;
-    font-weight: 600;
-  }
-
-  span {
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.5);
-  }
+  strong { font-size: 0.75rem; color: #fff; font-weight: 600; }
+  span { font-size: 0.7rem; color: rgba(255,255,255,0.5); }
 `
 
 const UserArea = styled.div`
@@ -174,7 +168,7 @@ const UserName = styled.p`
   text-overflow: ellipsis;
 `
 
-const UserFarm = styled.p`
+const UserEmail = styled.p`
   font-size: 0.7rem;
   color: rgba(255,255,255,0.45);
   white-space: nowrap;
@@ -189,7 +183,5 @@ const LogOutBtn = styled.button`
   flex-shrink: 0;
   transition: color 0.15s;
 
-  &:hover {
-    color: #fff;
-  }
+  &:hover { color: #fff; }
 `

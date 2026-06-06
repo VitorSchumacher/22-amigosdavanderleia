@@ -2,36 +2,78 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import styled from 'styled-components'
 import { Sprout, Eye, EyeOff } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+
+function maskPhone(v) {
+  v = v.replace(/\D/g, '').slice(0, 11)
+  return v
+    .replace(/^(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d{4})$/, '$1-$2')
+}
+
+function maskCpf(v) {
+  v = v.replace(/\D/g, '').slice(0, 11)
+  return v
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+}
 
 export default function Cadastro() {
   const navigate = useNavigate()
+  const { register } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({
-    nome: '',
+    name: '',
     email: '',
-    telefone: '',
-    fazenda: '',
-    cidade: '',
+    phone: '',
+    cpf: '',
+    birthDate: '',
     password: '',
   })
+  const [errors, setErrors] = useState({})
+  const [globalError, setGlobalError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value })
+    setErrors({ ...errors, [e.target.name]: undefined })
   }
 
-  function handlePhoneChange(e) {
-    let v = e.target.value.replace(/\D/g, '')
-    if (v.length <= 11) {
-      v = v
-        .replace(/^(\d{2})(\d)/, '($1) $2')
-        .replace(/(\d{5})(\d{4})$/, '$1-$2')
-    }
-    setForm({ ...form, telefone: v })
+  function handlePhone(e) {
+    setForm({ ...form, phone: maskPhone(e.target.value) })
   }
 
-  function handleSubmit(e) {
+  function handleCpf(e) {
+    setForm({ ...form, cpf: maskCpf(e.target.value) })
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault()
-    navigate('/dashboard')
+    setErrors({})
+    setGlobalError('')
+    setLoading(true)
+    try {
+      await register({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        phone: form.phone,
+        cpf: form.cpf,
+        birthDate: form.birthDate,
+      })
+      navigate('/dashboard')
+    } catch (err) {
+      if (err.status === 422 && err.errors) {
+        setErrors(err.errors)
+      } else if (err.status === 409) {
+        setGlobalError('E-mail ou CPF já cadastrado.')
+      } else {
+        setGlobalError(err.message ?? 'Erro ao criar conta. Tente novamente.')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -46,45 +88,70 @@ export default function Cadastro() {
         <Subheading>Preencha seus dados para começar</Subheading>
 
         <Form onSubmit={handleSubmit}>
-          <Row>
-            <Field>
-              <Label>Nome completo</Label>
-              <Input name="nome" placeholder="João da Silva" value={form.nome} onChange={handleChange} required />
-            </Field>
-          </Row>
+          <Field>
+            <Label>Nome completo</Label>
+            <Input
+              name="name"
+              placeholder="João da Silva"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+            {errors.name && <FieldError>{errors.name[0]}</FieldError>}
+          </Field>
 
-          <Row>
-            <Field>
-              <Label>E-mail</Label>
-              <Input name="email" type="email" placeholder="seu@email.com" value={form.email} onChange={handleChange} required />
-            </Field>
-          </Row>
+          <Field>
+            <Label>E-mail</Label>
+            <Input
+              name="email"
+              type="email"
+              placeholder="seu@email.com"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+            {errors.email && <FieldError>{errors.email[0]}</FieldError>}
+          </Field>
 
-          <Row>
-            <Field>
-              <Label>
-                WhatsApp
-                <PhoneBadge>usado para identificação</PhoneBadge>
-              </Label>
-              <Input
-                name="telefone"
-                placeholder="(65) 99999-9999"
-                value={form.telefone}
-                onChange={handlePhoneChange}
-                maxLength={15}
-                required
-              />
-            </Field>
-          </Row>
+          <Field>
+            <Label>
+              WhatsApp
+              <PhoneBadge>usado para identificação</PhoneBadge>
+            </Label>
+            <Input
+              name="phone"
+              placeholder="(65) 99999-9999"
+              value={form.phone}
+              onChange={handlePhone}
+              maxLength={15}
+              required
+            />
+            {errors.phone && <FieldError>{errors.phone[0]}</FieldError>}
+          </Field>
 
           <TwoCol>
             <Field>
-              <Label>Nome da fazenda</Label>
-              <Input name="fazenda" placeholder="Fazenda Boa Esperança" value={form.fazenda} onChange={handleChange} />
+              <Label>CPF</Label>
+              <Input
+                name="cpf"
+                placeholder="000.000.000-00"
+                value={form.cpf}
+                onChange={handleCpf}
+                maxLength={14}
+                required
+              />
+              {errors.cpf && <FieldError>{errors.cpf[0]}</FieldError>}
             </Field>
             <Field>
-              <Label>Cidade / UF</Label>
-              <Input name="cidade" placeholder="Sorriso - MT" value={form.cidade} onChange={handleChange} />
+              <Label>Data de nascimento</Label>
+              <Input
+                name="birthDate"
+                type="date"
+                value={form.birthDate}
+                onChange={handleChange}
+                required
+              />
+              {errors.birthDate && <FieldError>{errors.birthDate[0]}</FieldError>}
             </Field>
           </TwoCol>
 
@@ -94,23 +161,29 @@ export default function Cadastro() {
               <Input
                 name="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Mínimo 8 caracteres"
+                placeholder="Mínimo 6 caracteres"
                 value={form.password}
                 onChange={handleChange}
-                minLength={8}
+                minLength={6}
                 required
               />
               <EyeBtn type="button" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </EyeBtn>
             </PasswordWrapper>
+            {errors.password && <FieldError>{errors.password[0]}</FieldError>}
           </Field>
 
+          {globalError && <ErrorMsg>{globalError}</ErrorMsg>}
+
           <TermsText>
-            Ao criar uma conta, você concorda com os <a href="#">Termos de Uso</a> e <a href="#">Política de Privacidade</a>.
+            Ao criar uma conta, você concorda com os <a href="#">Termos de Uso</a> e{' '}
+            <a href="#">Política de Privacidade</a>.
           </TermsText>
 
-          <SubmitBtn type="submit">Criar conta</SubmitBtn>
+          <SubmitBtn type="submit" disabled={loading}>
+            {loading ? 'Criando conta...' : 'Criar conta'}
+          </SubmitBtn>
         </Form>
 
         <LoginText>
@@ -133,7 +206,7 @@ const PageWrapper = styled.div`
 const Card = styled.div`
   background: #fff;
   border-radius: 16px;
-  padding: 40px 40px;
+  padding: 40px;
   width: 100%;
   max-width: 480px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
@@ -170,8 +243,6 @@ const Form = styled.form`
   flex-direction: column;
   gap: 16px;
 `
-
-const Row = styled.div``
 
 const TwoCol = styled.div`
   display: grid;
@@ -213,13 +284,8 @@ const Input = styled.input`
   outline: none;
   transition: border-color 0.2s;
 
-  &:focus {
-    border-color: #2D6A4F;
-  }
-
-  &::placeholder {
-    color: #ADB5BD;
-  }
+  &:focus { border-color: #2D6A4F; }
+  &::placeholder { color: #ADB5BD; }
 `
 
 const PasswordWrapper = styled.div`
@@ -234,6 +300,20 @@ const EyeBtn = styled.button`
   color: #6C757D;
   display: flex;
   align-items: center;
+`
+
+const FieldError = styled.span`
+  font-size: 0.78rem;
+  color: #C62828;
+`
+
+const ErrorMsg = styled.p`
+  background: #FFF0EE;
+  border: 1px solid #FFCDD2;
+  color: #C62828;
+  font-size: 0.875rem;
+  padding: 10px 14px;
+  border-radius: 8px;
 `
 
 const TermsText = styled.p`
@@ -256,10 +336,9 @@ const SubmitBtn = styled.button`
   padding: 13px;
   border-radius: 8px;
   transition: background 0.2s;
+  opacity: ${({ disabled }) => disabled ? 0.7 : 1};
 
-  &:hover {
-    background: #1B4332;
-  }
+  &:hover:not(:disabled) { background: #1B4332; }
 `
 
 const LoginText = styled.p`

@@ -5,6 +5,7 @@ import {
   Sprout, MessageCircle, LayoutDashboard, Bot, TrendingUp,
   CloudRain, ArrowRight, ChevronDown, CheckCircle2, Smartphone,
   BarChart2, Wheat, MapPin, Users, Star, Menu, X,
+  FileText, ShieldCheck, Package,
 } from 'lucide-react'
 import { useInView } from '../hooks/useInView'
 
@@ -272,6 +273,27 @@ export default function Landing() {
               desc: 'Soja, milho, algodão e mais. Acompanhe a variação diária e receba avisos quando atingir o preço-alvo.',
               tag: null,
             },
+            {
+              icon: <FileText size={28} color="#6B46C1" />,
+              bg: '#F3F0FF',
+              title: 'Emissão de NF-e / NFS-e',
+              desc: 'Emita notas fiscais eletrônicas diretamente pela plataforma, com transmissão automática à SEFAZ e DANFE disponível para download.',
+              tag: 'Novo',
+            },
+            {
+              icon: <ShieldCheck size={28} color="#1D4ED8" />,
+              bg: '#EFF6FF',
+              title: 'Integração SEFAZ',
+              desc: 'Receba automaticamente todas as NF-e emitidas no seu CNPJ — receitas e despesas são lançadas sem nenhum lançamento manual.',
+              tag: 'Novo',
+            },
+            {
+              icon: <Package size={28} color="#B45309" />,
+              bg: '#FFFBEB',
+              title: 'Controle de Estoque',
+              desc: 'Gerencie insumos, combustíveis e materiais da propriedade. Receba alertas de estoque baixo e vincule entradas às NF-e.',
+              tag: 'Novo',
+            },
           ].map(({ icon, bg, title, desc, tag }, i) => (
             <FeatCard key={i} inView={featIn} delay={`${0.1 + i * 0.09}s`}>
               {tag && <FeatTag>{tag}</FeatTag>}
@@ -348,6 +370,9 @@ export default function Landing() {
                 'Comparativo safra anterior',
                 'Alertas de estouro de orçamento',
                 'Integração com previsão do tempo',
+                'Emissão de NF-e e NFS-e integrada à SEFAZ',
+                'Recebimento automático de notas de receitas e despesas',
+                'Controle de estoque com alertas de nível mínimo',
               ].map(item => (
                 <FieldListItem key={item}>
                   <CheckCircle2 size={16} color="#74C69D" />
