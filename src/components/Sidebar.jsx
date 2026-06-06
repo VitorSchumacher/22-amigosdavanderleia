@@ -2,8 +2,9 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import {
   LayoutDashboard, Receipt, BarChart2, Settings,
-  LogOut, Sprout, MessageCircle, FileText, ShieldCheck, Package,
+  LogOut, MessageCircle, FileText, ShieldCheck, Package,
 } from 'lucide-react'
+import logoImg from '../assets/logo.png'
 import { useAuth } from '../contexts/AuthContext'
 
 const navItems = [
@@ -31,8 +32,7 @@ export default function Sidebar() {
   return (
     <Aside>
       <LogoArea>
-        <Sprout size={26} color="#40916C" />
-        <LogoText>Guiar</LogoText>
+        <LogoImg src={logoImg} alt="Guiar" />
       </LogoArea>
 
       <Nav>
@@ -78,17 +78,14 @@ const Aside = styled.aside`
 `
 
 const LogoArea = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 24px 20px 20px;
+  padding: 20px 16px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
 `
 
-const LogoText = styled.span`
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #fff;
+const LogoImg = styled.img`
+  height: 36px;
+  width: auto;
+  filter: brightness(0) invert(1);
 `
 
 const Nav = styled.nav`

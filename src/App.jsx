@@ -15,6 +15,7 @@ import Configuracoes from './pages/Configuracoes'
 import NotasFiscais from './pages/NotasFiscais'
 import Sefaz from './pages/Sefaz'
 import Estoque from './pages/Estoque'
+import WhatsappOTP from './pages/WhatsappOTP'
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/whatsapp/send-otp" element={<WhatsappOTP />} />
             <Route element={<PrivateRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import styled from 'styled-components'
-import { Sprout, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import logoImg from '../assets/logo.png'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -34,8 +35,7 @@ export default function Login() {
     <PageWrapper>
       <Card>
         <Logo>
-          <Sprout size={32} color="#2D6A4F" />
-          <LogoText>Guiar</LogoText>
+          <LogoImg src={logoImg} alt="Guiar" />
         </Logo>
 
         <Heading>Bem-vindo de volta</Heading>
@@ -110,15 +110,13 @@ const Card = styled.div`
 
 const Logo = styled.div`
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 28px;
+  justify-content: center;
+  margin-bottom: 32px;
 `
 
-const LogoText = styled.span`
-  font-size: 1.375rem;
-  font-weight: 700;
-  color: #1B4332;
+const LogoImg = styled.img`
+  height: 80px;
+  width: auto;
 `
 
 const Heading = styled.h1`

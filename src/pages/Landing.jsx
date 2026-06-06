@@ -7,6 +7,7 @@ import {
   BarChart2, Wheat, MapPin, Users, Star, Menu, X,
   FileText, ShieldCheck, Package,
 } from 'lucide-react'
+import logoImg from '../assets/logo.png'
 import { useInView } from '../hooks/useInView'
 
 /* ─── IMAGES ─────────────────────────────────────────────────── */
@@ -122,8 +123,7 @@ export default function Landing() {
       <Navbar scrolled={scrolled}>
         <NavInner>
           <NavLogo>
-            <Sprout size={26} color="#40916C" />
-            <span>Guiar</span>
+            <NavLogoImg src={logoImg} alt="Guiar" />
           </NavLogo>
           <NavLinks>
             <a href="#funcionalidades">Funcionalidades</a>
@@ -521,8 +521,7 @@ export default function Landing() {
       <Footer>
         <FooterInner>
           <FooterLogo>
-            <Sprout size={22} color="#40916C" />
-            <span>Guiar</span>
+            <FooterLogoImg src={logoImg} alt="Guiar" />
           </FooterLogo>
           <FooterTagline>Gestão financeira para o produtor rural brasileiro.</FooterTagline>
         </FooterInner>
@@ -567,11 +566,13 @@ const NavInner = styled.div`
 const NavLogo = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #fff;
   flex-shrink: 0;
+`
+
+const NavLogoImg = styled.img`
+  height: 32px;
+  width: auto;
+  filter: brightness(0) invert(1);
 `
 
 const NavLinks = styled.nav`
@@ -1569,10 +1570,12 @@ const FooterInner = styled.div`
 const FooterLogo = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #fff;
+`
+
+const FooterLogoImg = styled.img`
+  height: 28px;
+  width: auto;
+  filter: brightness(0) invert(1);
 `
 
 const FooterTagline = styled.p`
